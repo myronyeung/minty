@@ -67,7 +67,7 @@ readConfig(function(data) {
 				storyList[i].key = obj[i].key;
 			}
 
-			console.log(storyList.length);
+			//console.log(storyList.length);
 
 			// Kinda ghetto, imitating this pattern for managing asynchronous calls: http://book.mixu.net/node/ch7.html#block_2
 			// Every time hitURL is called, I decrement this counter. When it hits zero, I will call a method that will return the final, groomed 
@@ -88,7 +88,7 @@ readConfig(function(data) {
 				hitURL(options, j);
 			}
 
-			console.log("NOT Done!!! Async's will still happen after this line is called!!!");
+			//console.log("NOT Done!!! Async's will still happen after this line is called!!!");
 		});
 	});
 
@@ -119,7 +119,8 @@ readConfig(function(data) {
 					, json = ""
 					, findSprint = CURRENT_SPRINT;
 
-				// Remove stories that do not have sprintField specified or has sprintField specified, but does not belong to findSprint, e.g. "Sprint 13".
+				// Remove stories that do not have sprintField specified or has sprintField specified,
+				// but does not belong to findSprint, e.g. "Sprint 13".
 				// Once we call hitURL once for every story in the set, we can return the final array.
 				originalStoryListCounter--;
 				//console.log(originalStoryListCounter);
@@ -127,9 +128,10 @@ readConfig(function(data) {
 				if (!sprintField || (sprintField && (sprintField.toString()).indexOf(findSprint) === -1)) {
 					//console.log(obj.key);
 
-					// If ticket does not belong to the current sprint, mark it for removal from the story array. If I do this: storyList.splice(index, 1), 
-					// I end up changing the size and therefore indices of the array!
-					storyList[index] = null
+					// If ticket does not belong to the current sprint, mark it for removal from the story array.
+					// If I do this: storyList.splice(index, 1), 
+					// I end up changing the size and therefore the indices of the array get messed up!
+					storyList[index] = null;
 
 				} else if (sprintField) {
 					// This JIRA ticket belongs to the current sprint, yay!
@@ -154,7 +156,7 @@ readConfig(function(data) {
 
 		for (var i = 0; i < storyList.length; i++) {
 			if (storyList[i]) {
-				displayString = storyList[i].key + "\t" + storyList[i].info.fields.summary;
+				displayString = storyList[i].key + "\t" + storyList[i].info.fields.summary; //storyList[i].info.fields.subtasks[n].self
 				console.log(displayString);
 				currentSprintCount++;
 			}
