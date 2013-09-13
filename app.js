@@ -152,11 +152,19 @@ readConfig(function(data) {
 	}
 
 	var final = function() {
+		var fields = "";
 		var displayString = "";
 
 		for (var i = 0; i < storyList.length; i++) {
 			if (storyList[i]) {
-				displayString = storyList[i].key + "\t" + storyList[i].info.fields.summary; //storyList[i].info.fields.subtasks[n].self
+				fields = storyList[i].info.fields;
+				displayString = fields.issuetype.name + "\t" + 
+					storyList[i].key + "\t" + 
+					fields.summary + "\t" + 
+					(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") + "\t" + // Story points
+					fields.status.name + "\t" + 
+					(fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "") + "\t";
+					//storyList[i].info.fields.subtasks[n].self
 				console.log(displayString);
 				currentSprintCount++;
 			}
