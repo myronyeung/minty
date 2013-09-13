@@ -8,8 +8,8 @@ var https = require('https')
 	// Every time hitURL is called, I decrement this counter. When it hits zero, I will call a method that will return the final, groomed 
 	// list of stories.
 	, originalStoryListCounter = 0
-	, storyListJSON = {}
-	, storyList = [];
+	, storyList = []
+	, currentSprintCount = 0;
 
 // Get private info
 // To overcome async issues where jiraHost and myAuth was not getting set to the private information taken from fs.readFile. I wrapped
@@ -63,11 +63,8 @@ readConfig(function(data) {
 				//console.log(obj[i].key);
 
 				// Second approach: build out an array of all the tickets first
-				storyList[i] = obj[i].key;
-				storyListJSON[obj[i].key] = obj;
-				// First approach (which I abandoned because the results from each call to hitURL came back non-deterministically):
-				// Now check each issue and see if it belongs in the current sprint:
-				//hitURL(options);
+				storyList[i] = {}; // If I do not intialize this element to an empty object first, applying storyList[i].key throws an error.
+				storyList[i].key = obj[i].key;
 			}
 
 			console.log(storyList.length);
@@ -78,17 +75,17 @@ readConfig(function(data) {
 			originalStoryListCounter = storyList.length;
 
 			for(var j = 0; j < storyList.length; j++) { 
-				////console.log(storyList[j]);
+				//console.log(storyList[j]);
 
 				var options = {
 					host: jiraHost
-					, path: "/rest/api/2/issue/" + storyList[j]
+					, path: "/rest/api/2/issue/" + storyList[j].key
 					//, path: "/rest/api/2/issue/ULIVE-929"
 					//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50"
 					, auth: myAuth
 				};
 
-				hitURL(options);
+				hitURL(options, j);
 			}
 
 			console.log("NOT Done!!! Async's will still happen after this line is called!!!");
@@ -102,7 +99,7 @@ readConfig(function(data) {
 	});
 
 
-	var hitURL = function(options) {
+	var hitURL = function(options, index) {
 		var req = https.request(options, function(res) {
 			//console.log("statusCode: ", res.statusCode);
 			//console.log("headers: ", res.headers);
@@ -125,26 +122,21 @@ readConfig(function(data) {
 				// Remove stories that do not have sprintField specified or has sprintField specified, but does not belong to findSprint, e.g. "Sprint 13".
 				// Once we call hitURL once for every story in the set, we can return the final array.
 				originalStoryListCounter--;
-				console.log(originalStoryListCounter);
+				//console.log(originalStoryListCounter);
 
-				if(!sprintField || (sprintField && (sprintField.toString()).indexOf(findSprint) === -1)) {
-					//console.log(storyList.length);
+				if (!sprintField || (sprintField && (sprintField.toString()).indexOf(findSprint) === -1)) {
+					//console.log(obj.key);
 
-					// If ticket does not belong to the current sprint, remove it from the story array
-					var i = storyList.indexOf(obj.key);
+					// If ticket does not belong to the current sprint, mark it for removal from the story array. If I do this: storyList.splice(index, 1), 
+					// I end up changing the size and therefore indices of the array!
+					storyList[index] = null
 
-					if(i !== -1) {
-						storyList.splice(i, 1);
-						delete storyListJSON[obj.key];
-					}
-
-					//console.log(obj.key + ": " + obj.fields.summary + (obj.fields.fixVersions && obj.fields.fixVersions[0] ? ": " + obj.fields.fixVersions[0].name : "" ));
-					//console.log(obj.fields.customfield_10311);
-				} else {
-					////storyListJSON[obj.key] = obj;
+				} else if (sprintField) {
+					// This JIRA ticket belongs to the current sprint, yay!
+					storyList[index].info = obj;
 				}
 
-				if(originalStoryListCounter === 0) {
+				if (originalStoryListCounter === 0) {
 					final();
 				}
 			});
@@ -158,22 +150,25 @@ readConfig(function(data) {
 	}
 
 	var final = function() {
-		console.log("Done! Number of stories in " + CURRENT_SPRINT + ": " + storyList.length);
-		for (var key in storyListJSON) {
-			if (storyListJSON.hasOwnProperty(key)) {
-				var fields = storyListJSON[key].fields;
-				//console.log(key + ": " + storyListJSON[key].fields.summary);
-				console.log(key + "\t" + fields.summary + /*"\t" + (fields.customfield_10002 ? fields.customfield_10002 : "") + */
-					"\t" + (fields.fixVersions && fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : ""));
+		var displayString = "";
+
+		for (var i = 0; i < storyList.length; i++) {
+			if (storyList[i]) {
+				displayString = storyList[i].key + "\t" + storyList[i].info.fields.summary;
+				console.log(displayString);
+				currentSprintCount++;
 			}
 		}
-
 		
-		for(var i = 0; i < storyList.length; i++) {
-			console.log(storyList[i]);
-		}
-		
+		console.log("Done! Number of stories in " + CURRENT_SPRINT + ": " + currentSprintCount);
 	}
+
+	/* Ultimately an element of storyList looks like this for example:
+	storyList[1] = {
+		"key" : "U-929",
+		"info" : { Big JSON object returned from https://perfectsense.atlassian.net/rest/api/2/issue/ULIVE-929 }
+	}
+	*/
 
 	/* Code waiting in the wings: */
 
