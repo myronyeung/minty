@@ -101,9 +101,7 @@ readConfig(function(data) {
 
 	var hitURL = function(options, index) {
 		var req = https.request(options, function(res) {
-			//console.log("statusCode: ", res.statusCode);
-			//console.log("headers: ", res.headers);
-
+			
 			var data = "";
 
 			res.on("data", function(chunk) {
@@ -154,6 +152,8 @@ readConfig(function(data) {
 	var final = function() {
 		var fields = "";
 		var displayString = "";
+
+		console.log(CURRENT_SPRINT + "\n");
 
 		for (var i = 0; i < storyList.length; i++) {
 			if (storyList[i]) {
