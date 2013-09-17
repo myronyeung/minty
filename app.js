@@ -1,6 +1,7 @@
 // Load the https module to create an https server.
-var https = require('https')
-	, fs = require('fs')
+var https = require("https")
+	, fs = require("fs")
+	, async = require("async")
 	, jiraHost = "" //perfectsense.atlassian.net"
 	, myAuth = "" //myeung:eBay.c0m"
 	, CURRENT_SPRINT = "Sprint 13"
@@ -10,6 +11,50 @@ var https = require('https')
 	, originalStoryListCounter = 0
 	, storyList = []
 	, currentSprintCount = 0;
+
+
+var a = function() {
+	f.register();
+	setTimeout(function(){
+		console.log("a");
+		f.done();
+	}, 2000);
+}
+
+var b = function() {
+	f.register();
+	setTimeout(function(){
+		console.log("b");
+		f.done();
+	}, 3);
+}
+
+var last = function() {
+	console.log("last function");
+}
+
+var f = (function(func) {
+	var counter = 0;
+	var func = func; // Must bind param to local variable. Why?
+	return {
+		register: function () {
+			counter++;
+		},
+		done: function () {
+			counter--;
+			if (counter === 0) {
+				func();
+			}
+		}
+	}
+}(last));
+
+
+/*
+a();
+b();
+*/
+
 
 // Get private info
 // To overcome async issues where jiraHost and myAuth was not getting set to the private information taken from fs.readFile. I wrapped
@@ -74,19 +119,58 @@ readConfig(function(data) {
 			// list of stories.
 			originalStoryListCounter = storyList.length;
 
-			for(var j = 0; j < storyList.length; j++) { 
-				//console.log(storyList[j]);
+		var myArray = [];
 
-				var options = {
-					host: jiraHost
-					, path: "/rest/api/2/issue/" + storyList[j].key
-					//, path: "/rest/api/2/issue/ULIVE-929"
-					//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50"
-					, auth: myAuth
+		for(var j = 0; j < storyList.length; j++) { 
+			//console.log(storyList[j].key);
+
+			// I was stuck on the classic closure problem of how to pass in a parameter. My classic problem was that only the final value of j 
+			// made it into the function. The solution is to lock the parameter variable to a static one, i.e. index = j.
+			// Source: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example#answer-11842261
+			// Also had problems with first creating the array, then passing it into async.parallel().
+			// Source: http://stackoverflow.com/questions/12472448/async-parallel-with-functions-dynamic-array
+			myArray[j] = (function(callback) {
+				var index = j;
+
+					console.log(index);
+
+					/*return function() {
+						return index;
+					};*/
+				
+				return function(callback) {
+
+					//console.log("My value: " + storyList[index]);
+
+					var options = {
+						host: jiraHost
+						, path: "/rest/api/2/issue/" + storyList[index].key
+						//, path: "/rest/api/2/issue/ULIVE-929"
+						//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50"
+						, auth: myAuth
+					};
+
+					hitURL(options, index);
+					
+					
+					callback();
 				};
+			}());
+		}	
 
-				hitURL(options, j);
-			}
+		console.log("myArray: " + myArray.length);
+
+		for(var k = 0; k < myArray.length; k++) {
+			console.log("myArray: " + myArray[k]());
+		}
+
+		async.parallel(myArray,
+		// callback
+		function(err, results){
+			console.log("all done: " + myArray.length);
+			//final();
+		});
+			
 
 			//console.log("NOT Done!!! Async's will still happen after this line is called!!!");
 		});
@@ -120,7 +204,7 @@ readConfig(function(data) {
 				// Remove stories that do not have sprintField specified or has sprintField specified,
 				// but does not belong to findSprint, e.g. "Sprint 13".
 				// Once we call hitURL once for every story in the set, we can return the final array.
-				originalStoryListCounter--;
+//				originalStoryListCounter--;
 				//console.log(originalStoryListCounter);
 
 				if (!sprintField || (sprintField && (sprintField.toString()).indexOf(findSprint) === -1)) {
@@ -133,11 +217,12 @@ readConfig(function(data) {
 
 				} else if (sprintField) {
 					// This JIRA ticket belongs to the current sprint, yay!
+					//console.log("What is index? " + index);
 					storyList[index].info = obj;
 				}
 
 				if (originalStoryListCounter === 0) {
-					final();
+//					final();
 				}
 			});
 		});
