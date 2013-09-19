@@ -1,67 +1,21 @@
 // Load the https module to create an https server.
-var https = require("https")
-	, fs = require("fs")
-	, async = require("async")
-	, jiraHost = "" //perfectsense.atlassian.net"
-	, myAuth = "" //myeung:eBay.c0m"
-	, CURRENT_SPRINT = "Sprint 13"
-	// Kinda ghetto, imitating this pattern for managing asynchronous calls: http://book.mixu.net/node/ch7.html#block_2
-	// Every time hitURL is called, I decrement this counter. When it hits zero, I will call a method that will return the final, groomed 
-	// list of stories.
-	, originalStoryListCounter = 0
-	, storyList = []
-	, currentSprintCount = 0;
+var https = require("https"),
+	fs = require("fs"),
+	async = require("async"),
+	jiraHost = "",
+	myAuth = "",
+	CURRENT_SPRINT = "Sprint 13",
+	storyList = [],
+	currentSprintCount = 0;
 
-
-var a = function() {
-	f.register();
-	setTimeout(function(){
-		console.log("a");
-		f.done();
-	}, 2000);
-}
-
-var b = function() {
-	f.register();
-	setTimeout(function(){
-		console.log("b");
-		f.done();
-	}, 3);
-}
-
-var last = function() {
-	console.log("last function");
-}
-
-var f = (function(func) {
-	var counter = 0;
-	var func = func; // Must bind param to local variable. Why?
-	return {
-		register: function () {
-			counter++;
-		},
-		done: function () {
-			counter--;
-			if (counter === 0) {
-				func();
-			}
-		}
-	}
-}(last));
-
-
-/*
-a();
-b();
-*/
 
 
 // Get private info
 // To overcome async issues where jiraHost and myAuth was not getting set to the private information taken from fs.readFile. I wrapped
 // the subsequent calls to the JIRA/GreenHopper API in a callback. Hello pyramid of doom!
 // Source: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
-function readConfig(callback) { 
-	fs.readFile('conf/settings.json', 'UTF8', function (err, data) {
+function readConfig(callback) {
+	fs.readFile('conf/settings.json', 'UTF8', function(err, data) {
 		if (err) {
 			return console.log(err);
 		}
@@ -79,12 +33,13 @@ readConfig(function(data) {
 
 
 	var options = {
-		host: jiraHost
-		, path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12"
+		host: jiraHost,
+		path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12"
 		//, path: "/rest/greenhopper/1.0/rapid/charts/sprintreport?rapidViewId=12&sprintId=26"
 		//, path: "/rest/api/2/issue/ULIVE-929"
 		//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50"
-		, auth: myAuth
+		,
+		auth: myAuth
 	};
 
 
@@ -101,10 +56,10 @@ readConfig(function(data) {
 
 		// Solution to SyntaxError: Unexpected end of input:
 		// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
-		res.on("end", function(){
+		res.on("end", function() {
 			var obj = JSON.parse(data).issues;
 
-			for(var i = 0; i < obj.length; i++) {
+			for (var i = 0; i < obj.length; i++) {
 				//console.log(obj[i].key);
 
 				// Second approach: build out an array of all the tickets first
@@ -114,65 +69,41 @@ readConfig(function(data) {
 
 			//console.log(storyList.length);
 
-			// Kinda ghetto, imitating this pattern for managing asynchronous calls: http://book.mixu.net/node/ch7.html#block_2
-			// Every time hitURL is called, I decrement this counter. When it hits zero, I will call a method that will return the final, groomed 
-			// list of stories.
-			originalStoryListCounter = storyList.length;
 
-		var myArray = [];
+			// After a lot of hunting, I finally found an example of a dynamically created array of functions that is passed
+			// into async.parallel!
+			// Source: http://codereview.stackexchange.com/questions/6101/async-callbacks-and-closures-am-i-doing-it-right
+			var queries = []; // this will be fed to async.parallel() later
 
-		for(var j = 0; j < storyList.length; j++) { 
-			//console.log(storyList[j].key);
-
-			// I was stuck on the classic closure problem of how to pass in a parameter. My classic problem was that only the final value of j 
-			// made it into the function. The solution is to lock the parameter variable to a static one, i.e. index = j.
-			// Source: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example#answer-11842261
-			// Also had problems with first creating the array, then passing it into async.parallel().
-			// Source: http://stackoverflow.com/questions/12472448/async-parallel-with-functions-dynamic-array
-			myArray[j] = (function(callback) {
-				var index = j;
-
-					console.log(index);
-
-					/*return function() {
-						return index;
-					};*/
-				
-				return function(callback) {
-
-					//console.log("My value: " + storyList[index]);
+			var makeQuery = function makeQuery(index) { // factory function to create the queries
+				return function doQuery(callback) {
+					////console.log(index);
 
 					var options = {
-						host: jiraHost
-						, path: "/rest/api/2/issue/" + storyList[index].key
+						host: jiraHost,
+						path: "/rest/api/2/issue/" + storyList[index].key
 						//, path: "/rest/api/2/issue/ULIVE-929"
 						//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50"
-						, auth: myAuth
+						,
+						auth: myAuth
 					};
 
-					hitURL(options, index);
-					
-					
-					callback();
+					hitURL(options, index, callback);
+
 				};
-			}());
-		}	
+			};
 
-		console.log("myArray: " + myArray.length);
+			for (var j = 0; j < storyList.length; j++) { // build the list of tasks to be done in parallel
+				queries.push(makeQuery(j));
+			}
 
-		for(var k = 0; k < myArray.length; k++) {
-			console.log("myArray: " + myArray[k]());
-		}
+			// Run queries in parallel
+			async.parallel(queries, function finished() {
+				//console.log('done');
+				collectStoriesInSprint();
+			});
 
-		async.parallel(myArray,
-		// callback
-		function(err, results){
-			console.log("all done: " + myArray.length);
-			//final();
-		});
-			
-
-			//console.log("NOT Done!!! Async's will still happen after this line is called!!!");
+			// console.log("NOT Done!!! Async's will still happen after this line is called!!!");
 		});
 	});
 
@@ -183,9 +114,9 @@ readConfig(function(data) {
 	});
 
 
-	var hitURL = function(options, index) {
+	var hitURL = function(options, index, callback) {
 		var req = https.request(options, function(res) {
-			
+
 			var data = "";
 
 			res.on("data", function(chunk) {
@@ -196,16 +127,15 @@ readConfig(function(data) {
 			// Solution to SyntaxError: Unexpected end of input:
 			// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
 			res.on("end", function() {
-				var obj = JSON.parse(data)
-					, sprintField = obj.fields.customfield_10311
-					, json = ""
-					, findSprint = CURRENT_SPRINT;
+
+				var obj = JSON.parse(data),
+					sprintField = obj.fields.customfield_10311,
+					json = "",
+					findSprint = CURRENT_SPRINT;
 
 				// Remove stories that do not have sprintField specified or has sprintField specified,
 				// but does not belong to findSprint, e.g. "Sprint 13".
 				// Once we call hitURL once for every story in the set, we can return the final array.
-//				originalStoryListCounter--;
-				//console.log(originalStoryListCounter);
 
 				if (!sprintField || (sprintField && (sprintField.toString()).indexOf(findSprint) === -1)) {
 					//console.log(obj.key);
@@ -221,9 +151,8 @@ readConfig(function(data) {
 					storyList[index].info = obj;
 				}
 
-				if (originalStoryListCounter === 0) {
-//					final();
-				}
+				callback();
+
 			});
 		});
 
@@ -234,7 +163,7 @@ readConfig(function(data) {
 		});
 	}
 
-	var final = function() {
+	var collectStoriesInSprint = function() {
 		var fields = "";
 		var displayString = "";
 
@@ -243,18 +172,18 @@ readConfig(function(data) {
 		for (var i = 0; i < storyList.length; i++) {
 			if (storyList[i]) {
 				fields = storyList[i].info.fields;
-				displayString = fields.issuetype.name + "\t" + 
-					storyList[i].key + "\t" + 
-					fields.summary + "\t" + 
+				displayString = fields.issuetype.name + "\t" +
+					storyList[i].key + "\t" +
+					fields.summary + "\t" +
 					(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") + "\t" + // Story points
-					fields.status.name + "\t" + 
+				fields.status.name + "\t" +
 					(fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "") + "\t";
-					//storyList[i].info.fields.subtasks[n].self
+				//storyList[i].info.fields.subtasks[n].self
 				console.log(displayString);
 				currentSprintCount++;
 			}
 		}
-		
+
 		console.log("Done! Number of stories in " + CURRENT_SPRINT + ": " + currentSprintCount);
 	}
 
@@ -272,10 +201,5 @@ readConfig(function(data) {
 
 
 
-	
+
 });
-
-
-
-
-
