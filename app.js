@@ -14,6 +14,7 @@ var https = require("https"),
 // To overcome async issues where jiraHost and myAuth was not getting set to the private information taken from fs.readFile. I wrapped
 // the subsequent calls to the JIRA/GreenHopper API in a callback. Hello pyramid of doom!
 // Source: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
+
 function readConfig(callback) {
 	fs.readFile('conf/settings.json', 'UTF8', function(err, data) {
 		if (err) {
@@ -100,7 +101,7 @@ readConfig(function(data) {
 			// Run queries in parallel
 			async.parallel(queries, function finished() {
 				//console.log('done');
-				collectStoriesInSprint();
+				collectSubtasks();
 			});
 
 			// console.log("NOT Done!!! Async's will still happen after this line is called!!!");
@@ -163,23 +164,119 @@ readConfig(function(data) {
 		});
 	}
 
-	var collectStoriesInSprint = function() {
+	// Make request to see information on subtask
+	var hitURL2 = function(options, index, subtaskURL, callback) {
+		//console.log("Subtask URL: " + subtaskURL);
+
+		var req = https.request(options, function(res) {
+
+			var data = "";
+
+			res.on("data", function(chunk) {
+				data += chunk;
+				//process.stdout.write(json);
+			});
+
+			// Solution to SyntaxError: Unexpected end of input:
+			// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
+			res.on("end", function() {
+
+				var obj = JSON.parse(data);
+
+				// Add subtask to parent story. I am adding the entire subtask, because I want to sacrifice a bit of performance 
+				// for flexibility in the future.
+				storyList[index].subtasks = storyList[index].subtasks || [];
+				storyList[index].subtasks.push(obj);
+
+				callback();
+
+			});
+		});
+
+		req.end();
+
+		req.on("error", function(e) {
+			console.error(e);
+		});
+	}
+
+	var collectSubtasks = function() {
+
+
+		var queries = []; // this will be fed to async.parallel() later
+
+		var makeQuery = function makeQuery(index, subtaskURL) { // factory function to create the queries
+			return function doQuery(callback) {
+				////console.log(index);
+
+				var options = {
+					host: jiraHost,
+					path: subtaskURL,
+					auth: myAuth
+				};
+
+				hitURL2(options, index, subtaskURL, callback);
+
+			};
+		};
+
+		// Build the list of queries to be done in parallel
+		for (var i = 0; i < storyList.length; i++) {
+			var storyListElement = storyList[i];
+			if (storyListElement) {
+				var subtasks = storyListElement.info.fields.subtasks,
+					numSubtasks = subtasks.length;
+				if (numSubtasks > 0) {
+					for (var subtaskIndex = 0; subtaskIndex < numSubtasks; subtaskIndex++) {
+						// Pass in REST endpoint to each subtask along with its parent story (the i in storyList[i]).
+						queries.push(makeQuery(i, subtasks[subtaskIndex].self));
+						//console.log(numSubtasks + " subtasks.");
+						//console.log("Parent story: " + storyListElement.key)
+					}
+				}
+			}
+		}
+
+		// Run queries in parallel
+		async.parallel(queries, function finished() {
+			printStoriesAndSubtasks();
+		});
+
+		console.log("Done collecting tasks");
+	}
+
+	var printStoriesAndSubtasks = function() {
 		var fields = "";
 		var displayString = "";
 
 		console.log(CURRENT_SPRINT + "\n");
 
 		for (var i = 0; i < storyList.length; i++) {
-			if (storyList[i]) {
-				fields = storyList[i].info.fields;
+			var storyListElement = storyList[i];
+			if (storyListElement) {
+				fields = storyListElement.info.fields;
 				displayString = fields.issuetype.name + "\t" +
-					storyList[i].key + "\t" +
+					storyListElement.key + "\t" +
 					fields.summary + "\t" +
 					(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") + "\t" + // Story points
 				fields.status.name + "\t" +
 					(fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "") + "\t";
-				//storyList[i].info.fields.subtasks[n].self
+
+				// Print subtasks if story has them.
+				if (storyListElement.subtasks) {
+					var subtasks = storyListElement.subtasks,
+						numSubtasks = subtasks.length;
+					if (numSubtasks > 0) {
+						displayString += "There are " + numSubtasks + " subtasks.";
+						for (var subtaskIndex = 0; subtaskIndex < numSubtasks; subtaskIndex++) {
+							displayString += (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase() + ", ";
+						}
+					}
+				}
 				console.log(displayString);
+
+				// Count number of legit stories in Sprint. Remember, storyList contains null references because for some inane reason, 
+				// the API does not allow me to return just the Stories in a Sprint, in the correct order.
 				currentSprintCount++;
 			}
 		}
