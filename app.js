@@ -4,11 +4,14 @@ var https = require("https"),
 	async = require("async"),
 	jiraHost = "",
 	myAuth = "",
-	CURRENT_SPRINT = "Sprint 13",
+	currentSprint = "Sprint 13",
 	storyList = [],
 	currentSprintCount = 0;
 
-
+// 
+if (process.argv.length > 2) {
+	currentSprint = process.argv[2]; // Second param passed in (node counts as the zero param).
+}
 
 // Get private info
 // To overcome async issues where jiraHost and myAuth was not getting set to the private information taken from fs.readFile. I wrapped
@@ -132,7 +135,7 @@ readConfig(function(data) {
 				var obj = JSON.parse(data),
 					sprintField = obj.fields.customfield_10311,
 					json = "",
-					findSprint = CURRENT_SPRINT;
+					findSprint = currentSprint;
 
 				// Remove stories that do not have sprintField specified or has sprintField specified,
 				// but does not belong to findSprint, e.g. "Sprint 13".
@@ -249,16 +252,17 @@ readConfig(function(data) {
 		var fields = "";
 		var displayString = "";
 
-		console.log(CURRENT_SPRINT + "\n");
+		console.log(currentSprint + "\n");
 
 		for (var i = 0; i < storyList.length; i++) {
 			var storyListElement = storyList[i];
 			if (storyListElement) {
 				fields = storyListElement.info.fields;
-				displayString = fields.issuetype.name + "\t" +
+				displayString = 
+					(fields.issuetype.name === "Story" ? "Story Points: " + (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") : fields.issuetype.name) + "\t" + 
 					storyListElement.key + "\t" +
 					fields.summary + "\t" +
-					(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") + "\t" + // Story points
+					//(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") + "\t" + // Story points
 				fields.status.name + "\t" +
 					(fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "") + "\t";
 
@@ -267,9 +271,11 @@ readConfig(function(data) {
 					var subtasks = storyListElement.subtasks,
 						numSubtasks = subtasks.length;
 					if (numSubtasks > 0) {
-						displayString += "There are " + numSubtasks + " subtasks.";
+						//displayString += "There are " + numSubtasks + " subtasks.";
 						for (var subtaskIndex = 0; subtaskIndex < numSubtasks; subtaskIndex++) {
-							displayString += (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase() + ", ";
+							// To reduce a name to the first initials (capitalized): Myron Yeung becomes MY.
+							displayString += (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase() + ": ";
+							displayString += subtasks[subtaskIndex].fields.timetracking.originalEstimate + ", ";
 						}
 					}
 				}
@@ -281,7 +287,7 @@ readConfig(function(data) {
 			}
 		}
 
-		console.log("Done! Number of stories in " + CURRENT_SPRINT + ": " + currentSprintCount);
+		console.log("Done! Number of stories in " + currentSprint + ": " + currentSprintCount);
 	}
 
 	/* Ultimately an element of storyList looks like this for example:
@@ -291,10 +297,6 @@ readConfig(function(data) {
 	}
 	*/
 
-	/* Code waiting in the wings: */
-
-	// To reduce a name to the first initials (capitalized): Myron Yeung becomes MY.
-	//.replace(/\W*(\w)\w*/g, '$1').toUpperCase()
 
 
 
