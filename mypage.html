@@ -1,0 +1,29 @@
+
+<!DOCTYPE>
+
+<!-- Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Basic Mustache & NodeJS Demo</title>
+</head>
+<body>
+<h2>Basic Demo</h2>
+<ul>
+{{#records}}
+<li>Company: {{company}}</li>
+<li>Due in charge: {{name}}</li>
+<li>
+<ul>
+{{#systems}}
+<li>{{os}}</li>
+{{/systems}}
+</ul>
+</li>
+{{/records}}
+</ul>
+
+<h2>My Test</h2>
+<p>My first name is {{myTest.name}}</p>
+</body>
+</html>

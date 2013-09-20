@@ -2,13 +2,15 @@
 var https = require("https"),
 	fs = require("fs"),
 	async = require("async"),
+	sys = require("sys"),
+	mustache = require("mustache"),
 	jiraHost = "",
 	myAuth = "",
 	currentSprint = "Sprint 13",
 	storyList = [],
 	currentSprintCount = 0;
 
-// 
+// Pass in Sprint name, e.g. "Sprint 14"
 if (process.argv.length > 2) {
 	currentSprint = process.argv[2]; // Second param passed in (node counts as the zero param).
 }
@@ -107,7 +109,7 @@ readConfig(function(data) {
 				collectSubtasks();
 			});
 
-			console.log("Done filtering list to only stories that belong to " + currentSprint);
+			console.log("Done filtering list to include only stories that belong to " + currentSprint);
 		});
 	});
 
@@ -301,13 +303,57 @@ readConfig(function(data) {
 	// Load the http module to create an http server.
 	var http = require('http');
 
+	// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
+	var demoData = [{ // dummy data to display
+		"name": "Steve Balmer",
+		"company": "Microsoft",
+		"systems": [{
+			"os": "Windows XP"
+		}, {
+			"os": "Vista"
+		}, {
+			"os": "Windows 7"
+		}, {
+			"os": "Windows 8"
+		}]
+	}, {
+		"name": "Steve Jobs",
+		"company": "Apple",
+		"systems": [{
+			"os": "OSX Lion"
+		}, {
+			"os": "OSX Leopard"
+		}, {
+			"os": "IOS"
+		}]
+	}, {
+		"name": "Mark Z.",
+		"company": "Facebook"
+	}];
+
+	var demoData2 = {
+		"name": "Myron"
+	}
+
+
 	// Configure our HTTP server to respond with Hello World to all requests.
 	var server = http.createServer(function(request, response) {
 		response.writeHead(200, {
-			"Content-Type": "text/plain"
+			//"Content-Type": "text/plain"
+			"Content-Type": "text/html"
 		});
+
+		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
+		// Wrap the data in a global object... (mustache starts from an object then parses)
+		var rData = {
+			records: demoData,
+			myTest: demoData2
+		}; 
+		var page = fs.readFileSync("mypage.html", "utf8"); // bring in the HTML file
+		var html = mustache.to_html(page, rData); // replace all of the data
+
 		//response.end("Hello World\n");
-		response.end((storyList.length).toString());
+		response.end(html);
 	});
 
 	// Listen on port 8000, IP defaults to 127.0.0.1
