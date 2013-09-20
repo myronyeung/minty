@@ -107,7 +107,7 @@ readConfig(function(data) {
 				collectSubtasks();
 			});
 
-			// console.log("NOT Done!!! Async's will still happen after this line is called!!!");
+			console.log("Done filtering list to only stories that belong to " + currentSprint);
 		});
 	});
 
@@ -258,11 +258,11 @@ readConfig(function(data) {
 			var storyListElement = storyList[i];
 			if (storyListElement) {
 				fields = storyListElement.info.fields;
-				displayString = 
-					(fields.issuetype.name === "Story" ? "Story Points: " + (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") : fields.issuetype.name) + "\t" + 
+				displayString =
+					(fields.issuetype.name === "Story" ? "Story Points: " + (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") : fields.issuetype.name) + "\t" +
 					storyListElement.key + "\t" +
 					fields.summary + "\t" +
-					//(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") + "\t" + // Story points
+				//(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") + "\t" + // Story points
 				fields.status.name + "\t" +
 					(fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "") + "\t";
 
@@ -294,10 +294,27 @@ readConfig(function(data) {
 	storyList[1] = {
 		"key" : "U-929",
 		"info" : { Big JSON object returned from https://perfectsense.atlassian.net/rest/api/2/issue/ULIVE-929 }
+		"subtasks" {[array of subtasks]}
 	}
 	*/
 
+	// Load the http module to create an http server.
+	var http = require('http');
 
+	// Configure our HTTP server to respond with Hello World to all requests.
+	var server = http.createServer(function(request, response) {
+		response.writeHead(200, {
+			"Content-Type": "text/plain"
+		});
+		//response.end("Hello World\n");
+		response.end((storyList.length).toString());
+	});
+
+	// Listen on port 8000, IP defaults to 127.0.0.1
+	server.listen(8000);
+
+	// Put a friendly message on the terminal
+	console.log("Server running at http://127.0.0.1:8000/");
 
 
 
