@@ -8,6 +8,7 @@ var https = require("https"),
 	myAuth = "",
 	currentSprint = "Sprint 13",
 	storyList = [],
+	outputObject = [],
 	currentSprintCount = 0;
 
 // Pass in Sprint name, e.g. "Sprint 14"
@@ -33,7 +34,6 @@ readConfig(function(data) {
 	var newData = JSON.parse(data);
 	jiraHost = newData.jiraHost;
 	myAuth = newData.auth;
-
 
 
 
@@ -257,9 +257,19 @@ readConfig(function(data) {
 		console.log(currentSprint + "\n");
 
 		for (var i = 0; i < storyList.length; i++) {
-			var storyListElement = storyList[i];
+			var storyListElement = storyList[i],
+				tempOutputObject = {};
 			if (storyListElement) {
 				fields = storyListElement.info.fields;
+
+				////
+				tempOutputObject["key"] = storyListElement.key;
+				tempOutputObject["type"] = (fields.issuetype.name === "Story" ? "Story Points: " + (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") : fields.issuetype.name);
+				tempOutputObject["description"] = fields.summary;
+				tempOutputObject["status"] = fields.status.name;
+				tempOutputObject["release"] = (fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "");
+				////
+
 				displayString =
 					(fields.issuetype.name === "Story" ? "Story Points: " + (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") : fields.issuetype.name) + "\t" +
 					storyListElement.key + "\t" +
@@ -278,9 +288,25 @@ readConfig(function(data) {
 							// To reduce a name to the first initials (capitalized): Myron Yeung becomes MY.
 							displayString += (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase() + ": ";
 							displayString += subtasks[subtaskIndex].fields.timetracking.originalEstimate + ", ";
+
+							////
+							var displayName = (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase();
+							var originalEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.originalEstimateSeconds;
+							if (tempOutputObject[displayName]) {
+								// There is already one or more tasks for this story/bug assigned to this person.
+								tempOutputObject[displayName] += (originalEstimateSeconds / 3600);
+							} else {
+								tempOutputObject[displayName] = originalEstimateSeconds / 3600;
+							}
+							////
 						}
 					}
 				}
+
+				////
+				outputObject.push(tempOutputObject);
+				////
+
 				console.log(displayString);
 
 				// Count number of legit stories in Sprint. Remember, storyList contains null references because for some inane reason, 
@@ -347,7 +373,8 @@ readConfig(function(data) {
 		// Wrap the data in a global object... (mustache starts from an object then parses)
 		var rData = {
 			records: demoData,
-			myTest: demoData2
+			myTest: demoData2,
+			finalData: outputObject
 		}; 
 		var page = fs.readFileSync("mypage.html", "utf8"); // bring in the HTML file
 		var html = mustache.to_html(page, rData); // replace all of the data

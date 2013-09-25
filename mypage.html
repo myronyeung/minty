@@ -4,26 +4,62 @@
 <!-- Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine -->
 <html>
 <head>
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<title>Basic Mustache & NodeJS Demo</title>
+
+<title>Minty: Resource Planning on GreenHopper</title>
+
+<style>
+html, body {
+	height: 100%;
+}
+html {
+	font-family: Helvetica, sans-serif;
+}
+table, th, td {
+	border: 1px solid black;
+	border-collapse: collapse;
+	padding: 10px;
+}
+</style>
+
 </head>
 <body>
-<h2>Basic Demo</h2>
-<ul>
-{{#records}}
-<li>Company: {{company}}</li>
-<li>Due in charge: {{name}}</li>
-<li>
-<ul>
-{{#systems}}
-<li>{{os}}</li>
-{{/systems}}
-</ul>
-</li>
-{{/records}}
-</ul>
 
-<h2>My Test</h2>
-<p>My first name is {{myTest.name}}</p>
+<h1>Minty: Resource Planning on GreenHopper</h1>
+
+<h2>Sprint</h2>
+
+<table>
+	<tr>
+		<th>Type</th>
+		<th>Key</th>
+		<th>Description</th>
+		<th>Release</th>
+		<th>Status</th>
+		<th>BL</th>
+		<th>BO</th>
+		<th>OO</th>
+		<th>BM</th>
+		<th>KL</th>
+		<th>DW</th>
+	</tr>
+	{{#finalData}}
+	<tr>
+		<td>{{type}}</td>
+		<td>{{key}}</td>
+		<td>{{description}}</td>
+		<td>{{release}}</td>
+		<td>{{status}}</td>
+		<td>{{BL}}</td>
+		<td>{{BO}}</td>
+		<td>{{OO}}</td>
+		<td>{{BM}}</td>
+		<td>{{KL}}</td>
+		<td>{{DW}}</td>
+	</tr>
+	{{/finalData}}
+</table>
+
 </body>
 </html>

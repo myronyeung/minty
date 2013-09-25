@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+
+<!-- Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine -->
+<html>
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+<title>Experiment Page</title>
+
+<style>
+html, body {
+	height: 100%;
+}
+html {
+	font-family: Helvetica, sans-serif;
+}
+table, th, td {
+	border: 1px solid black;
+	border-collapse: collapse;
+	padding: 10px;
+}
+</style>
+
+</head>
+<body>
+<h2>Mustache.js Demo</h2>
+<ul>
+{{#records}}
+<li>Company: {{company}}</li>
+<li>Due in charge: {{name}}</li>
+<li>
+<ul>
+{{#systems}}
+<li>{{os}}</li>
+{{/systems}}
+</ul>
+</li>
+{{/records}}
+</ul>
+
+<h2>My Test</h2>
+<table>
+    <colgroup>
+        <col class="keyColumn">
+        <col class="descriptionColumn">
+        <col class="oo">
+    </colgroup>
+	<tr>
+		<th>Key</th>
+		<th>Description</th>
+		<th>OO</th>
+		<th>BM</th>
+		<th>KL</th>
+		<th>DW</th>
+	</tr>
+	{{#myTest}}
+	<tr data-subtasks='[
+		{{#subtasks}}
+			{"{{owner}}": "{{estimate}}"}
+		{{/subtasks}}
+	]'>
+		<td>{{info.key}}</td>
+		<td>{{info.description}}</td>
+		<td class="oo"></td>
+		<td class="bm"></td>
+		<td class="kl"></td>
+		<td class="dw" data-test='[{"BM": "24h"},{"OO": "1h"}]'></td>
+	</tr>
+	{{/myTest}}
+</table>
+
+<pre>
+	<code>
+{
+	"info": {
+		"key": "ULIVE-123",
+		"description": "Optimize performance"
+	},
+	"subtasks": [{
+		"owner": "Bryan Morton",
+		"estimate": "24h"
+	}, {
+		"owner": "Olive Oil",
+		"estimate": "4h"
+	}, {
+		"owner": "Bryan Morton",
+		"estimate": "1h"
+	}]
+}, {
+	"info": {
+		"key": "ULIVE-456",
+		"description": "Improve A11Y"
+	},
+	"subtasks": [{
+		"owner": "Kiefer Luminosity",
+		"estimate": "32h"
+	}, {
+		"owner": "Dov Wrench",
+		"estimate": "1h"
+	}]
+}
+	</code>
+</pre>
+
+<script>
+document.addEventListener("DOMContentLoaded", processTable);
+
+function processTable(event) {
+	var table = document.querySelector("table");
+	var rows = table.querySelectorAll("tr[data-subtasks]");
+	// Helpful: http://html5doctor.com/html5-custom-data-attributes/
+	window.alert(rows.length);
+}
+</script>
+
+</body>
+</html>
+
