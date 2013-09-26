@@ -376,7 +376,7 @@ readConfig(function(data) {
 			myTest: demoData2,
 			finalData: outputObject
 		}; 
-		var page = fs.readFileSync("mypage.html", "utf8"); // bring in the HTML file
+		var page = fs.readFileSync("index.html", "utf8"); // bring in the HTML file
 		var html = mustache.to_html(page, rData); // replace all of the data
 
 		//response.end("Hello World\n");
