@@ -7,7 +7,7 @@
 
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-	<title>Minty: Resource Planning extension for GreenHopper</title>
+	<title>Minty: Resource Planning Extension For GreenHopper</title>
 
 	<style>
 		html {
@@ -30,23 +30,25 @@
 			border-collapse: collapse;
 			padding: 5px 5px;
 		}
-		th {
-			position: static;
-		}
 		tbody tr.include {
 			opacity: 1.0;
 		}
 		tbody tr {
 			opacity: 0.3;
 		}
+		.totals {
+			text-align: right;
+		}
+		.sprintSelect {
+			font-size: 1.5rem;
+			font-weight: bold;
+		}
 	</style>
 
 </head>
 <body>
+	<h1>Minty: Resource Planning Extension For GreenHopper</h1>
 
-	<h1>Minty: Resource Planning on GreenHopper</h1>
-
-	<h2>Sprint</h2>
 
 	<form>
 		<table>
@@ -66,6 +68,19 @@
 					<th>OO</th>
 					<th>SH</th>
 					<th>SL</th>
+					<th></th>
+				</tr>
+				<tr>
+					<th class="totals" colspan="5">Remaining hours</th>
+					<th class="BL total"></th>
+					<th class="BO total"></th>
+					<th class="BK total"></th>
+					<th class="BM total"></th>
+					<th class="DW total"></th>
+					<th class="KL total"></th>
+					<th class="OO total"></th>
+					<th class="SH total"></th>
+					<th class="SL total"></th>
 					<th></th>
 				</tr>
 			</thead>
@@ -105,7 +120,7 @@
 					<th></th>
 				</tr>
 				<tr>
-					<th colspan="5"></th>
+					<th class="totals" colspan="5">Remaining hours</th>
 					<th class="BL total"></th>
 					<th class="BO total"></th>
 					<th class="BK total"></th>
@@ -123,12 +138,23 @@
 
 	<script>
 		document.addEventListener("DOMContentLoaded", function init (event) {
+			initializeSprintSelect();
 			processTable();
 			initializeEvents();
 		}, false);
 
+		function initializeSprintSelect () {
+			var sprintSelect = document.querySelector(".sprintSelect");
+			if (sprintSelect) {
+				sprintSelect.addEventListener("change", selectSprint, false);
+			}
+		}
+
+		function selectSprint() {
+
+		}
+
 		function processTable() {
-				console.log(88);
 			var doers = ["BL", "BO", "BK", "BM", "DW", "KL", "OO", "SH", "SL"], // HACK!!!
 				eTable = document.querySelector("table"),
 				eRows = eTable.querySelectorAll("tbody tr"),
@@ -149,16 +175,19 @@
 			for (var i = 0; i < doers.length; i++) {
 				initials = doers[i];
 				eTasks = eTable.querySelectorAll("tr.include " + "." + initials + ".task");
-				eTotal = eTable.querySelector("." + initials + ".total");
+				eTotal = eTable.querySelectorAll("." + initials + ".total");
 				total = 0;
 
-				for (var j = 0; j < eTasks.length; j++ ) {
+				for (var j = 0; j < eTasks.length; j++) {
 					var estimate = parseInt(eTasks[j].innerHTML);
 					if (estimate && !isNaN(estimate)) {
 						total += estimate;
 					}
 				}
-				eTotal.innerHTML = total;
+
+				for (var l = 0; l < eTotal.length; l++) {
+					eTotal[l].innerHTML = total;
+				}
 			}
 		}
 

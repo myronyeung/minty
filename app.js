@@ -11,7 +11,8 @@ var https = require("https"),
 	outputObject = [],
 	currentSprintCount = 0;
 
-// Pass in Sprint name, e.g. "Sprint 14"
+// DEPRECATED in favor of initiating query through the web interface.
+// Pass in Sprint name though the command line, e.g. "Sprint 14"
 if (process.argv.length > 2) {
 	currentSprint = process.argv[2]; // Second param passed in (node counts as the zero param).
 }
@@ -30,12 +31,82 @@ function readConfig(callback) {
 	});
 }
 
+
+
+
+
+
+
+
+
+
+
+// Load the http module to create an http server.
+var http = require('http');
+
+var url = require('url');
+
+// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
+
+// Configure our HTTP server to respond with Hello World to all requests.
+var server = http.createServer(function(request, response) {
+	response.writeHead(200, {
+		//"Content-Type": "text/plain"
+		"Content-Type": "text/html"
+	});
+
+
+
+
+
+	var url_parts = url.parse(request.url, true);
+	var query = url_parts.query;
+
+	currentSprint = "Sprint " + query["sprint"];
+
+	console.log("Query parameters: " + JSON.stringify(query));
+	console.log("Current Sprint: " + currentSprint);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async.series([
+    function(callback){
+
+
+
+
+
+
+
+
+
+
+
+
+
 readConfig(function(data) {
 	var newData = JSON.parse(data);
 	jiraHost = newData.jiraHost;
 	myAuth = newData.auth;
 
-
+	console.log("Start querying " + currentSprint);
 
 
 	var options = {
@@ -109,7 +180,7 @@ readConfig(function(data) {
 				collectSubtasks();
 			});
 
-			console.log("Done filtering list to include only stories that belong to " + currentSprint);
+			console.log("Done filtering list of " + storyList.length + " (!!!) stories to include only those that belong to " + currentSprint);
 		});
 	});
 
@@ -290,13 +361,15 @@ readConfig(function(data) {
 							displayString += subtasks[subtaskIndex].fields.timetracking.originalEstimate + ", ";
 
 							////
-							var displayName = (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase();
-							var originalEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.originalEstimateSeconds;
+							var displayName = (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase(), 
+							originalEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.originalEstimateSeconds;
+							remainingEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.remainingEstimateSeconds;
+
 							if (tempOutputObject[displayName]) {
 								// There is already one or more tasks for this story/bug assigned to this person.
-								tempOutputObject[displayName] += (originalEstimateSeconds / 3600);
+								tempOutputObject[displayName] += (remainingEstimateSeconds / 3600);
 							} else {
-								tempOutputObject[displayName] = originalEstimateSeconds / 3600;
+								tempOutputObject[displayName] = remainingEstimateSeconds / 3600;
 							}
 							////
 						}
@@ -315,80 +388,62 @@ readConfig(function(data) {
 			}
 		}
 
+		callback(null, "foo");
+
 		console.log("Done! Number of stories in " + currentSprint + ": " + currentSprintCount);
+
+		// TODO: Replace global variables.
+		// Reset global variables, otherwise it just keeps increasing with every request.
+		currentSprintCount = 0;
+		storyList = [];
+		outputObject = [];
+		currentSprintCount = 0;
 	}
 
-	/* Ultimately an element of storyList looks like this for example:
-	storyList[1] = {
-		"key" : "U-929",
-		"info" : { Big JSON object returned from https://perfectsense.atlassian.net/rest/api/2/issue/ULIVE-929 }
-		"subtasks" {[array of subtasks]}
-	}
-	*/
-
-	// Load the http module to create an http server.
-	var http = require('http');
-
-	// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
-	var demoData = [{ // dummy data to display
-		"name": "Steve Balmer",
-		"company": "Microsoft",
-		"systems": [{
-			"os": "Windows XP"
-		}, {
-			"os": "Vista"
-		}, {
-			"os": "Windows 7"
-		}, {
-			"os": "Windows 8"
-		}]
-	}, {
-		"name": "Steve Jobs",
-		"company": "Apple",
-		"systems": [{
-			"os": "OSX Lion"
-		}, {
-			"os": "OSX Leopard"
-		}, {
-			"os": "IOS"
-		}]
-	}, {
-		"name": "Mark Z.",
-		"company": "Facebook"
-	}];
-
-	var demoData2 = {
-		"name": "Myron"
-	}
+	// Ultimately an element of storyList looks like this for example:
+	//	storyList[1] = {
+	//	"key" : "U-929",
+	//	"info" : { Big JSON object returned from https://perfectsense.atlassian.net/rest/api/2/issue/ULIVE-929 }
+	//	"subtasks" {[array of subtasks]}
+	//	}
+});
 
 
-	// Configure our HTTP server to respond with Hello World to all requests.
-	var server = http.createServer(function(request, response) {
-		response.writeHead(200, {
-			//"Content-Type": "text/plain"
-			"Content-Type": "text/html"
-		});
 
-		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
-		// Wrap the data in a global object... (mustache starts from an object then parses)
-		var rData = {
-			records: demoData,
-			myTest: demoData2,
-			finalData: outputObject
-		}; 
-		var page = fs.readFileSync("index.html", "utf8"); // bring in the HTML file
-		var html = mustache.to_html(page, rData); // replace all of the data
 
-		//response.end("Hello World\n");
-		response.end(html);
-	});
 
-	// Listen on port 8000, IP defaults to 127.0.0.1
-	server.listen(8000);
 
-	// Put a friendly message on the terminal
-	console.log("Server running at http://127.0.0.1:8000/");
+
+
+
+
+
+    	
+    }
+],
+// optional callback
+function(err, results){
+    	// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
+	// Wrap the data in a global object... (mustache starts from an object then parses)
+	var rData = {
+		finalData: outputObject
+	};
+	var page = fs.readFileSync("index.html", "utf8"); // bring in the HTML file
+	var html = mustache.to_html(page, rData); // replace all of the data
+
+	//response.end("Hello World\n");
+	response.end(html);
+});
+
+
+
 
 
 
 });
+
+// Listen on port 8000, IP defaults to 127.0.0.1
+server.listen(8000);
+
+// Put a friendly message on the terminal
+console.log("Server running at http://127.0.0.1:8000/");
