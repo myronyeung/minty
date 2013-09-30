@@ -17,7 +17,7 @@ var https = require("https"),
 // Source: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
 (function authenticateUser() {
 	console.log("authenticateUser()");
-	
+
 	fs.readFile('conf/settings.json', 'UTF8', function(err, data) {
 		if (err) {
 			return console.log(err);
@@ -85,10 +85,10 @@ var server = http.createServer(function(request, response) {
 
 				var options = {
 					host: jiraHost,
-					path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12"
-					//, path: "/rest/greenhopper/1.0/rapid/charts/sprintreport?rapidViewId=12&sprintId=26"
-					//, path: "/rest/api/2/issue/ULIVE-929"
-					//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50"
+					path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12" // Only way to return tickets in the same order as in the sprints.
+					//, path: "/rest/greenhopper/1.0/rapid/charts/sprintreport?rapidViewId=12&sprintId=26" // Not useful for me, because order of tickets with regard to its sprint not maintained. Plus it appears to return tickets that do not belong in the sprint.
+					//, path: "/rest/api/2/issue/ULIVE-929" // Returns information on one ticket.
+					//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50" // Not useful, because tickets are returned in descending ticket id's. Also returns tickets that do not belong in the current sprint.
 					,
 					auth: myAuth
 				};
@@ -401,7 +401,7 @@ var server = http.createServer(function(request, response) {
 		}
 	],
 
-	// Optional callback
+	// Optional callback from async.series
 	function (err, results) {
 		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
 		// Wrap the data in a global object... (mustache starts from an object then parses)

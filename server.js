@@ -9,8 +9,8 @@ function start(route, handle) {
 	}
 
 	// Listen on port 8000, IP defaults to 127.0.0.1
-	http.createServer(onRequest).listen(8888);
-	console.log("Server has started.");
+	http.createServer(onRequest).listen(8000);
+	console.log("Minty has started.");
 }
 
 exports.start = start;
