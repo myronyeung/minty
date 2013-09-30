@@ -11,24 +11,23 @@ var https = require("https"),
 	outputObject = [],
 	currentSprintCount = 0;
 
-// DEPRECATED in favor of initiating query through the web interface.
-// Pass in Sprint name though the command line, e.g. "Sprint 14"
-if (process.argv.length > 2) {
-	currentSprint = process.argv[2]; // Second param passed in (node counts as the zero param).
-}
-
-// Get authentication information from local file (not checked into GitHub)
+// Get authentication information from local file (not checked into GitHub). For performance reasons, 
+// this is only called when server starts up, because the JIRA host name and user authentication should 
+// not change too often.
 // Source: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
-
-function readConfig(callback) {
+(function authenticateUser() {
+	console.log("authenticateUser()");
+	
 	fs.readFile('conf/settings.json', 'UTF8', function(err, data) {
 		if (err) {
 			return console.log(err);
+		} else {
+			var loginInfo = JSON.parse(data);
+			jiraHost = loginInfo.jiraHost;
+			myAuth = loginInfo.auth;
 		}
-		callback(data);
 	});
-}
-
+}());
 
 
 
@@ -80,19 +79,6 @@ var server = http.createServer(function(request, response) {
 
 	async.series([
 		function(callback) {
-
-
-
-
-
-
-
-
-
-			readConfig(function(data) {
-				var newData = JSON.parse(data);
-				jiraHost = newData.jiraHost;
-				myAuth = newData.auth;
 
 				console.log("Start querying " + currentSprint);
 
@@ -403,8 +389,6 @@ var server = http.createServer(function(request, response) {
 				//	"info" : { Big JSON object returned from https://perfectsense.atlassian.net/rest/api/2/issue/ULIVE-929 }
 				//	"subtasks" {[array of subtasks]}
 				//	}
-
-			}); //readConfig
 
 
 
