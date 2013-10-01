@@ -1,4 +1,4 @@
 {
-	"jiraHost" : domain_name // e.g. "perfectsense.atlassian.net"
+	"jiraHost" : domain_name // e.g. "www.atlassian.net"
 	, "auth": "username:password"
 }
