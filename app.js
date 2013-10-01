@@ -149,6 +149,14 @@ var printStoriesAndSubtasks = function(callback) {
 			tempOutputObject["release"] = (fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "");
 			////
 
+			//////For Stickies (hack, need this now)
+			tempOutputObject["type2"] = fields.issuetype.name;
+			tempOutputObject["storyPoints"] = (fields.issuetype.name === "Story" ? (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "N/A") : "");
+			tempOutputObject["release2"] = (fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "N/A");
+			//////
+
+
+
 			displayString =
 				(fields.issuetype.name === "Story" ? "Story Points: " +
 				(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") : fields.issuetype.name) + "\t" +
@@ -182,6 +190,22 @@ var printStoriesAndSubtasks = function(callback) {
 							tempOutputObject[displayName] = remainingEstimateSeconds / 3600;
 						}
 						////
+					}
+				}
+			}
+
+			// HACK: Print subtasks for stickies.
+			if (storyListElement.subtasks) {
+				var subtasks2 = storyListElement.subtasks,
+					numSubtasks2 = subtasks2.length;
+				if (numSubtasks2 > 0) {
+					
+					tempOutputObject["subtasks"] = [];
+					for (var subtaskIndex2 = 0; subtaskIndex2 < numSubtasks2; subtaskIndex2++) {
+						console.log(subtasks2[subtaskIndex2]);
+						tempOutputObject["subtasks"][subtaskIndex2] = {};
+						tempOutputObject["subtasks"][subtaskIndex2]["name"] = subtasks2[subtaskIndex2].fields.assignee.displayName;
+						tempOutputObject["subtasks"][subtaskIndex2]["estimate"] = subtasks2[subtaskIndex2].fields.timetracking.remainingEstimate;
 					}
 				}
 			}
@@ -292,10 +316,6 @@ var server = http.createServer(function(request, response) {
 		"Content-Type": "text/html"
 	});
 
-
-
-
-
 	var url_parts = url.parse(request.url, true);
 	var query = url_parts.query;
 
@@ -304,127 +324,119 @@ var server = http.createServer(function(request, response) {
 	console.log("Query parameters: " + JSON.stringify(query));
 	console.log("Current Sprint: " + currentSprint);
 
-
-
-
-
-
-
-
-
 	async.series([
-			function(callback) {
+		function(callback) {
 
-				console.log("Start querying " + currentSprint);
+			console.log("Start querying " + currentSprint);
 
-				// Other paths that I explored and why they did not work:
+			// Other paths that I explored and why they did not work:
 
-				// Not useful for me, because order of tickets with regard to its sprint not maintained. Plus it 
-				// appears to return tickets that do not belong in the sprint.
-				// path: "/rest/greenhopper/1.0/rapid/charts/sprintreport?rapidViewId=12&sprintId=26" 
+			// Not useful for me, because order of tickets with regard to its sprint not maintained. Plus it 
+			// appears to return tickets that do not belong in the sprint.
+			// path: "/rest/greenhopper/1.0/rapid/charts/sprintreport?rapidViewId=12&sprintId=26" 
 
-				// Not useful, because tickets are returned in descending ticket id's. Also returns tickets that 
-				// do not belong in the current sprint.
-				// path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50" 
+			// Not useful, because tickets are returned in descending ticket id's. Also returns tickets that 
+			// do not belong in the current sprint.
+			// path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50" 
 
-				// For reference, this call returns information about one ticket.
-				// path: "/rest/api/2/issue/ULIVE-929"
-				var options = {
-					host: jiraHost,
-					// Only url that returns tickets in the same order as in the sprints.
-					path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12",
-					auth: myAuth
-				};
-
-
-				var req = https.request(options, function(res) {
-					//console.log("statusCode: ", res.statusCode);
-					//console.log("headers: ", res.headers);
-
-					var data = "";
-
-					res.on("data", function(chunk) {
-						data += chunk;
-						//process.stdout.write(json);
-					});
-
-					// Solution to SyntaxError: Unexpected end of input:
-					// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
-					res.on("end", function() {
-						var obj = JSON.parse(data).issues;
-
-						for (var i = 0; i < obj.length; i++) {
-							//console.log(obj[i].key);
-
-							// Second approach: build out an array of all the tickets first
-							storyList[i] = {}; // If I do not intialize this element to an empty object first, applying storyList[i].key throws an error.
-							storyList[i].key = obj[i].key;
-						}
-
-						//console.log(storyList.length);
+			// For reference, this call returns information about one ticket.
+			// path: "/rest/api/2/issue/ULIVE-929"
+			var options = {
+				host: jiraHost,
+				// Only url that returns tickets in the same order as in the sprints.
+				path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12",
+				auth: myAuth
+			};
 
 
-						// After a lot of hunting, I finally found an example of a dynamically created array of functions that is passed
-						// into async.parallel!
-						// Source: http://codereview.stackexchange.com/questions/6101/async-callbacks-and-closures-am-i-doing-it-right
-						var queries = []; // this will be fed to async.parallel() later
+			var req = https.request(options, function(res) {
+				//console.log("statusCode: ", res.statusCode);
+				//console.log("headers: ", res.headers);
 
-						var makeQuery = function makeQuery(index) { // factory function to create the queries
-							return function doQuery(callback) {
-								////console.log(index);
+				var data = "";
 
-								var options = {
-									host: jiraHost,
-									path: "/rest/api/2/issue/" + storyList[index].key
-									//, path: "/rest/api/2/issue/ULIVE-929"
-									//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50"
-									,
-									auth: myAuth
-								};
-
-								hitURL(options, index, callback);
-
-							};
-						};
-
-						for (var j = 0; j < storyList.length; j++) { // build the list of tasks to be done in parallel
-							queries.push(makeQuery(j));
-						}
-
-						// Run queries in parallel
-						async.parallel(queries, function finished() {
-							collectSubtasks(callback);
-						});
-
-						console.log("Done filtering list of " + storyList.length + " (!!!) stories to include only those that belong to " + currentSprint);
-					});
-
-				}); // req = https.request
-
-				req.end();
-
-				req.on("error", function(e) {
-					console.error(e);
+				res.on("data", function(chunk) {
+					data += chunk;
+					//process.stdout.write(json);
 				});
 
-			}
-		],
+				// Solution to SyntaxError: Unexpected end of input:
+				// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
+				res.on("end", function() {
+					var obj = JSON.parse(data).issues;
 
-		// Callback from async.series
+					for (var i = 0; i < obj.length; i++) {
+						//console.log(obj[i].key);
 
-		function(err, results) {
-			// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
-			// Wrap the data in a global object... (mustache starts from an object then parses)
-			var rData = {
-				finalData: outputObject
-			};
-			var page = fs.readFileSync("index.html", "utf8"); // bring in the HTML file
-			var html = mustache.to_html(page, rData); // replace all of the data
+						// Second approach: build out an array of all the tickets first
+						storyList[i] = {}; // If I do not intialize this element to an empty object first, applying storyList[i].key throws an error.
+						storyList[i].key = obj[i].key;
+					}
 
-			//response.end("Hello World\n");
-			response.end(html);
+					//console.log(storyList.length);
 
-		}); // async.series
+
+					// After a lot of hunting, I finally found an example of a dynamically created array of functions that is passed
+					// into async.parallel!
+					// Source: http://codereview.stackexchange.com/questions/6101/async-callbacks-and-closures-am-i-doing-it-right
+					var queries = []; // this will be fed to async.parallel() later
+
+					var makeQuery = function makeQuery(index) { // factory function to create the queries
+						return function doQuery(callback) {
+							////console.log(index);
+
+							var options = {
+								host: jiraHost,
+								path: "/rest/api/2/issue/" + storyList[index].key
+								//, path: "/rest/api/2/issue/ULIVE-929"
+								//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50"
+								,
+								auth: myAuth
+							};
+
+							hitURL(options, index, callback);
+
+						};
+					};
+
+					for (var j = 0; j < storyList.length; j++) { // build the list of tasks to be done in parallel
+						queries.push(makeQuery(j));
+					}
+
+					// Run queries in parallel
+					async.parallel(queries, function finished() {
+						collectSubtasks(callback);
+					});
+
+					console.log("Done filtering list of " + storyList.length + " (!!!) stories to include only those that belong to " + currentSprint);
+				});
+
+			}); // req = https.request
+
+			req.end();
+
+			req.on("error", function(e) {
+				console.error(e);
+			});
+
+		}
+	],
+
+	// Callback from async.series
+
+	function(err, results) {
+		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
+		// Wrap the data in a global object... (mustache starts from an object then parses)
+		var rData = {
+			finalData: outputObject
+		};
+		var page = fs.readFileSync("index.html", "utf8"); // bring in the HTML file
+		var html = mustache.to_html(page, rData); // replace all of the data
+
+		//response.end("Hello World\n");
+		response.end(html);
+
+	}); // async.series
 
 }); // server
 
