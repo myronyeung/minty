@@ -318,16 +318,21 @@ var server = http.createServer(function(request, response) {
 				console.log("Start querying " + currentSprint);
 
 				// Other paths that I explored and why they did not work:
-				// Not useful for me, because order of tickets with regard to its sprint not maintained. Plus it appears to return tickets that do not belong in the sprint.
+
+				// Not useful for me, because order of tickets with regard to its sprint not maintained. Plus it 
+				// appears to return tickets that do not belong in the sprint.
 				// path: "/rest/greenhopper/1.0/rapid/charts/sprintreport?rapidViewId=12&sprintId=26" 
-				// Not useful, because tickets are returned in descending ticket id's. Also returns tickets that do not belong in the current sprint.
+
+				// Not useful, because tickets are returned in descending ticket id's. Also returns tickets that 
+				// do not belong in the current sprint.
 				// path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50" 
 
 				// For reference, this call returns information about one ticket.
 				// path: "/rest/api/2/issue/ULIVE-929"
 				var options = {
 					host: jiraHost,
-					path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12", // Only way to return tickets in the same order as in the sprints.
+					// Only url that returns tickets in the same order as in the sprints.
+					path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12",
 					auth: myAuth
 				};
 

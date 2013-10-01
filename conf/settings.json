@@ -1,0 +1,4 @@
+{
+	"jiraHost" : domain_name // e.g. "perfectsense.atlassian.net"
+	, "auth": "username:password"
+}
