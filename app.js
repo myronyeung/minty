@@ -32,6 +32,241 @@ var https = require("https"),
 
 
 
+var hitURL = function(options, index, callback) {
+	var req = https.request(options, function(res) {
+
+		var data = "";
+
+		res.on("data", function(chunk) {
+			data += chunk;
+			//process.stdout.write(json);
+		});
+
+		// Solution to SyntaxError: Unexpected end of input:
+		// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
+		res.on("end", function() {
+
+			var obj = JSON.parse(data),
+				sprintField = obj.fields.customfield_10311,
+				json = "",
+				findSprint = currentSprint;
+
+			// Remove stories that do not have sprintField specified or has sprintField specified,
+			// but does not belong to findSprint, e.g. "Sprint 13".
+			// Once we call hitURL once for every story in the set, we can return the final array.
+
+			if (!sprintField || (sprintField && (sprintField.toString()).indexOf(findSprint) === -1)) {
+				//console.log(obj.key);
+
+				// If ticket does not belong to the current sprint, mark it for removal from the story array.
+				// If I do this: storyList.splice(index, 1), 
+				// I end up changing the size and therefore the indices of the array get messed up!
+				storyList[index] = null;
+
+			} else if (sprintField) {
+				// This JIRA ticket belongs to the current sprint, yay!
+				//console.log("What is index? " + index);
+				storyList[index].info = obj;
+			}
+
+			callback();
+
+		});
+	});
+
+	req.end();
+
+	req.on("error", function(e) {
+		console.error(e);
+	});
+
+} // hitURL
+
+
+
+
+
+// Make request to see information on subtask
+var hitURL2 = function(options, index, subtaskURL, callback) {
+	//console.log("Subtask URL: " + subtaskURL);
+
+	var req = https.request(options, function(res) {
+
+		var data = "";
+
+		res.on("data", function(chunk) {
+			data += chunk;
+			//process.stdout.write(json);
+		});
+
+		// Solution to SyntaxError: Unexpected end of input:
+		// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
+		res.on("end", function() {
+
+			var obj = JSON.parse(data);
+
+			// Add subtask to parent story. I am adding the entire subtask, because I want to sacrifice a bit of performance 
+			// for flexibility in the future.
+			storyList[index].subtasks = storyList[index].subtasks || [];
+			storyList[index].subtasks.push(obj);
+
+			callback();
+
+		});
+	});
+
+	req.end();
+
+	req.on("error", function(e) {
+		console.error(e);
+	});
+
+} // hitURL2
+
+
+
+
+
+var printStoriesAndSubtasks = function(callback) {
+	var fields = "";
+	var displayString = "";
+
+	console.log(currentSprint + "\n");
+
+	for (var i = 0; i < storyList.length; i++) {
+		var storyListElement = storyList[i],
+			tempOutputObject = {};
+		if (storyListElement) {
+			fields = storyListElement.info.fields;
+
+			////
+			tempOutputObject["key"] = storyListElement.key;
+			tempOutputObject["type"] = (fields.issuetype.name === "Story" ? "Story Points: " +
+				(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") : fields.issuetype.name);
+
+			tempOutputObject["description"] = fields.summary;
+			tempOutputObject["status"] = fields.status.name;
+			tempOutputObject["release"] = (fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "");
+			////
+
+			displayString =
+				(fields.issuetype.name === "Story" ? "Story Points: " +
+				(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") : fields.issuetype.name) + "\t" +
+
+			storyListElement.key + "\t" +
+				fields.summary + "\t" +
+			//(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") + "\t" + // Story points
+			fields.status.name + "\t" +
+				(fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "") + "\t";
+
+			// Print subtasks if story has them.
+			if (storyListElement.subtasks) {
+				var subtasks = storyListElement.subtasks,
+					numSubtasks = subtasks.length;
+				if (numSubtasks > 0) {
+					//displayString += "There are " + numSubtasks + " subtasks.";
+					for (var subtaskIndex = 0; subtaskIndex < numSubtasks; subtaskIndex++) {
+						// To reduce a name to the first initials (capitalized): Myron Yeung becomes MY.
+						displayString += (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase() + ": ";
+						displayString += subtasks[subtaskIndex].fields.timetracking.originalEstimate + ", ";
+
+						////
+						var displayName = (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase(),
+							originalEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.originalEstimateSeconds;
+						remainingEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.remainingEstimateSeconds;
+
+						if (tempOutputObject[displayName]) {
+							// There is already one or more tasks for this story/bug assigned to this person.
+							tempOutputObject[displayName] += (remainingEstimateSeconds / 3600);
+						} else {
+							tempOutputObject[displayName] = remainingEstimateSeconds / 3600;
+						}
+						////
+					}
+				}
+			}
+
+			////
+			outputObject.push(tempOutputObject);
+			////
+
+			console.log(displayString);
+
+			// Count number of legit stories in Sprint. Remember, storyList contains null references because for some inane reason, 
+			// the API does not allow me to return just the Stories in a Sprint, in the correct order.
+			currentSprintCount++;
+		}
+	}
+
+	// This tells the app that it is done getting all the data and is ready to pass control over to outputData().
+	callback(null, "foo");
+
+	console.log("Done! Number of stories in " + currentSprint + ": " + currentSprintCount);
+
+	// TODO: Replace global variables.
+	// Reset global variables, otherwise it just keeps increasing with every request.
+	currentSprintCount = 0;
+	storyList = [];
+	outputObject = [];
+	currentSprintCount = 0;
+
+} // printStoriesAndSubtasks
+
+// Ultimately an element of storyList looks like this for example:
+//	storyList[1] = {
+//	"key" : "U-929",
+//	"info" : { Big JSON object returned from https://perfectsense.atlassian.net/rest/api/2/issue/ULIVE-929 }
+//	"subtasks" {[array of subtasks]}
+//	}
+
+
+
+
+
+var collectSubtasks = function(callback) {
+
+	var queries = []; // this will be fed to async.parallel() later
+
+	var makeQuery = function makeQuery(index, subtaskURL) { // factory function to create the queries
+		return function doQuery(callback) {
+			////console.log(index);
+
+			var options = {
+				host: jiraHost,
+				path: subtaskURL,
+				auth: myAuth
+			};
+
+			hitURL2(options, index, subtaskURL, callback);
+
+		};
+	};
+
+	// Build the list of queries to be done in parallel
+	for (var i = 0; i < storyList.length; i++) {
+		var storyListElement = storyList[i];
+		if (storyListElement) {
+			var subtasks = storyListElement.info.fields.subtasks,
+				numSubtasks = subtasks.length;
+			if (numSubtasks > 0) {
+				for (var subtaskIndex = 0; subtaskIndex < numSubtasks; subtaskIndex++) {
+					// Pass in REST endpoint to each subtask along with its parent story (the i in storyList[i]).
+					queries.push(makeQuery(i, subtasks[subtaskIndex].self));
+					//console.log(numSubtasks + " subtasks.");
+					//console.log("Parent story: " + storyListElement.key)
+				}
+			}
+		}
+	}
+
+	// Run queries in parallel
+	async.parallel(queries, function finished() {
+		printStoriesAndSubtasks(callback);
+	});
+
+	console.log("Done collecting tasks");
+
+} // collectSubtasks
 
 
 
@@ -78,18 +313,21 @@ var server = http.createServer(function(request, response) {
 
 
 	async.series([
-		function(callback) {
+			function(callback) {
 
 				console.log("Start querying " + currentSprint);
 
+				// Other paths that I explored and why they did not work:
+				// Not useful for me, because order of tickets with regard to its sprint not maintained. Plus it appears to return tickets that do not belong in the sprint.
+				// path: "/rest/greenhopper/1.0/rapid/charts/sprintreport?rapidViewId=12&sprintId=26" 
+				// Not useful, because tickets are returned in descending ticket id's. Also returns tickets that do not belong in the current sprint.
+				// path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50" 
 
+				// For reference, this call returns information about one ticket.
+				// path: "/rest/api/2/issue/ULIVE-929"
 				var options = {
 					host: jiraHost,
-					path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12" // Only way to return tickets in the same order as in the sprints.
-					//, path: "/rest/greenhopper/1.0/rapid/charts/sprintreport?rapidViewId=12&sprintId=26" // Not useful for me, because order of tickets with regard to its sprint not maintained. Plus it appears to return tickets that do not belong in the sprint.
-					//, path: "/rest/api/2/issue/ULIVE-929" // Returns information on one ticket.
-					//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50" // Not useful, because tickets are returned in descending ticket id's. Also returns tickets that do not belong in the current sprint.
-					,
+					path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12", // Only way to return tickets in the same order as in the sprints.
 					auth: myAuth
 				};
 
@@ -150,8 +388,7 @@ var server = http.createServer(function(request, response) {
 
 						// Run queries in parallel
 						async.parallel(queries, function finished() {
-							//console.log('done');
-							collectSubtasks();
+							collectSubtasks(callback);
 						});
 
 						console.log("Done filtering list of " + storyList.length + " (!!!) stories to include only those that belong to " + currentSprint);
@@ -165,259 +402,26 @@ var server = http.createServer(function(request, response) {
 					console.error(e);
 				});
 
+			}
+		],
 
-				var hitURL = function(options, index, callback) {
-					var req = https.request(options, function(res) {
+		// Callback from async.series
 
-						var data = "";
+		function(err, results) {
+			// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
+			// Wrap the data in a global object... (mustache starts from an object then parses)
+			var rData = {
+				finalData: outputObject
+			};
+			var page = fs.readFileSync("index.html", "utf8"); // bring in the HTML file
+			var html = mustache.to_html(page, rData); // replace all of the data
 
-						res.on("data", function(chunk) {
-							data += chunk;
-							//process.stdout.write(json);
-						});
+			//response.end("Hello World\n");
+			response.end(html);
 
-						// Solution to SyntaxError: Unexpected end of input:
-						// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
-						res.on("end", function() {
+		}); // async.series
 
-							var obj = JSON.parse(data),
-								sprintField = obj.fields.customfield_10311,
-								json = "",
-								findSprint = currentSprint;
-
-							// Remove stories that do not have sprintField specified or has sprintField specified,
-							// but does not belong to findSprint, e.g. "Sprint 13".
-							// Once we call hitURL once for every story in the set, we can return the final array.
-
-							if (!sprintField || (sprintField && (sprintField.toString()).indexOf(findSprint) === -1)) {
-								//console.log(obj.key);
-
-								// If ticket does not belong to the current sprint, mark it for removal from the story array.
-								// If I do this: storyList.splice(index, 1), 
-								// I end up changing the size and therefore the indices of the array get messed up!
-								storyList[index] = null;
-
-							} else if (sprintField) {
-								// This JIRA ticket belongs to the current sprint, yay!
-								//console.log("What is index? " + index);
-								storyList[index].info = obj;
-							}
-
-							callback();
-
-						});
-					});
-
-					req.end();
-
-					req.on("error", function(e) {
-						console.error(e);
-					});
-
-				} // hitURL
-
-				// Make request to see information on subtask
-				var hitURL2 = function(options, index, subtaskURL, callback) {
-					//console.log("Subtask URL: " + subtaskURL);
-
-					var req = https.request(options, function(res) {
-
-						var data = "";
-
-						res.on("data", function(chunk) {
-							data += chunk;
-							//process.stdout.write(json);
-						});
-
-						// Solution to SyntaxError: Unexpected end of input:
-						// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
-						res.on("end", function() {
-
-							var obj = JSON.parse(data);
-
-							// Add subtask to parent story. I am adding the entire subtask, because I want to sacrifice a bit of performance 
-							// for flexibility in the future.
-							storyList[index].subtasks = storyList[index].subtasks || [];
-							storyList[index].subtasks.push(obj);
-
-							callback();
-
-						});
-					});
-
-					req.end();
-
-					req.on("error", function(e) {
-						console.error(e);
-					});
-
-				} // hitURL2
-
-				var collectSubtasks = function() {
-
-
-					var queries = []; // this will be fed to async.parallel() later
-
-					var makeQuery = function makeQuery(index, subtaskURL) { // factory function to create the queries
-						return function doQuery(callback) {
-							////console.log(index);
-
-							var options = {
-								host: jiraHost,
-								path: subtaskURL,
-								auth: myAuth
-							};
-
-							hitURL2(options, index, subtaskURL, callback);
-
-						};
-					};
-
-					// Build the list of queries to be done in parallel
-					for (var i = 0; i < storyList.length; i++) {
-						var storyListElement = storyList[i];
-						if (storyListElement) {
-							var subtasks = storyListElement.info.fields.subtasks,
-								numSubtasks = subtasks.length;
-							if (numSubtasks > 0) {
-								for (var subtaskIndex = 0; subtaskIndex < numSubtasks; subtaskIndex++) {
-									// Pass in REST endpoint to each subtask along with its parent story (the i in storyList[i]).
-									queries.push(makeQuery(i, subtasks[subtaskIndex].self));
-									//console.log(numSubtasks + " subtasks.");
-									//console.log("Parent story: " + storyListElement.key)
-								}
-							}
-						}
-					}
-
-					// Run queries in parallel
-					async.parallel(queries, function finished() {
-						printStoriesAndSubtasks();
-					});
-
-					console.log("Done collecting tasks");
-
-				} // collectSubtasks
-
-				var printStoriesAndSubtasks = function() {
-					var fields = "";
-					var displayString = "";
-
-					console.log(currentSprint + "\n");
-
-					for (var i = 0; i < storyList.length; i++) {
-						var storyListElement = storyList[i],
-							tempOutputObject = {};
-						if (storyListElement) {
-							fields = storyListElement.info.fields;
-
-							////
-							tempOutputObject["key"] = storyListElement.key;
-							tempOutputObject["type"] = (fields.issuetype.name === "Story" ? "Story Points: " + 
-								(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") : fields.issuetype.name);
-
-							tempOutputObject["description"] = fields.summary;
-							tempOutputObject["status"] = fields.status.name;
-							tempOutputObject["release"] = (fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "");
-							////
-
-							displayString =
-								(fields.issuetype.name === "Story" ? "Story Points: " + 
-									(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") : fields.issuetype.name) + "\t" +
-
-								storyListElement.key + "\t" +
-								fields.summary + "\t" +
-							//(fields.customfield_10002 ? parseInt(fields.customfield_10002) : "") + "\t" + // Story points
-							fields.status.name + "\t" +
-								(fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "") + "\t";
-
-							// Print subtasks if story has them.
-							if (storyListElement.subtasks) {
-								var subtasks = storyListElement.subtasks,
-									numSubtasks = subtasks.length;
-								if (numSubtasks > 0) {
-									//displayString += "There are " + numSubtasks + " subtasks.";
-									for (var subtaskIndex = 0; subtaskIndex < numSubtasks; subtaskIndex++) {
-										// To reduce a name to the first initials (capitalized): Myron Yeung becomes MY.
-										displayString += (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase() + ": ";
-										displayString += subtasks[subtaskIndex].fields.timetracking.originalEstimate + ", ";
-
-										////
-										var displayName = (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, '$1').toUpperCase(),
-											originalEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.originalEstimateSeconds;
-										remainingEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.remainingEstimateSeconds;
-
-										if (tempOutputObject[displayName]) {
-											// There is already one or more tasks for this story/bug assigned to this person.
-											tempOutputObject[displayName] += (remainingEstimateSeconds / 3600);
-										} else {
-											tempOutputObject[displayName] = remainingEstimateSeconds / 3600;
-										}
-										////
-									}
-								}
-							}
-
-							////
-							outputObject.push(tempOutputObject);
-							////
-
-							console.log(displayString);
-
-							// Count number of legit stories in Sprint. Remember, storyList contains null references because for some inane reason, 
-							// the API does not allow me to return just the Stories in a Sprint, in the correct order.
-							currentSprintCount++;
-						}
-					}
-
-					callback(null, "foo");
-
-					console.log("Done! Number of stories in " + currentSprint + ": " + currentSprintCount);
-
-					// TODO: Replace global variables.
-					// Reset global variables, otherwise it just keeps increasing with every request.
-					currentSprintCount = 0;
-					storyList = [];
-					outputObject = [];
-					currentSprintCount = 0;
-
-				} // printStoriesAndSubtasks
-
-				// Ultimately an element of storyList looks like this for example:
-				//	storyList[1] = {
-				//	"key" : "U-929",
-				//	"info" : { Big JSON object returned from https://perfectsense.atlassian.net/rest/api/2/issue/ULIVE-929 }
-				//	"subtasks" {[array of subtasks]}
-				//	}
-
-
-
-
-
-
-
-
-
-		}
-	],
-
-	// Optional callback from async.series
-	function (err, results) {
-		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
-		// Wrap the data in a global object... (mustache starts from an object then parses)
-		var rData = {
-			finalData: outputObject
-		};
-		var page = fs.readFileSync("index.html", "utf8"); // bring in the HTML file
-		var html = mustache.to_html(page, rData); // replace all of the data
-
-		//response.end("Hello World\n");
-		response.end(html);
-
-	}); // async.series
-
-
-}); // var server
+}); // server
 
 // Listen on port 8000, IP defaults to 127.0.0.1
 server.listen(8000);
