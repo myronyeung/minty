@@ -26,7 +26,7 @@ var https = require("https"),
 }());
 
 
-var hitURL3 = function(options, index, func, callback) {
+var hitURL = function(options, index, func, callback) {
 
 	var req = https.request(options, function(res) {
 
@@ -50,7 +50,7 @@ var hitURL3 = function(options, index, func, callback) {
 		console.error(e);
 	});
 
-} // hitURL3
+} // hitURL
 
 
 
@@ -180,7 +180,7 @@ var collectSubtasks = function(callback, storyList, outputObject, currentSprint,
 				auth: myAuth
 			};
 
-			hitURL3(options, index, function addSubtask(data) {
+			hitURL(options, index, function addSubtask(data) {
 
 				var obj = JSON.parse(data);
 
@@ -329,7 +329,7 @@ var server = http.createServer(function(request, response) {
 									auth: myAuth
 								};
 
-								hitURL3(options, index, function addStory(data) {
+								hitURL(options, index, function addStory(data) {
 
 									var obj = JSON.parse(data),
 										sprintField = (obj.fields && obj.fields.customfield_10311 ? obj.fields.customfield_10311 : null),
@@ -409,4 +409,4 @@ server.setTimeout(4 * 60 * 1000);
 server.listen(8000);
 
 // Put a friendly message on the terminal
-console.log("Server running at http://127.0.0.1:8000/");
+console.log("Minty running at http://127.0.0.1:8000/");
