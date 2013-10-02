@@ -55,8 +55,8 @@ var hitURL = function(options, index, func, callback) {
 
 
 
-
-var printStoriesAndSubtasks = function(callback, storyList, outputObject, currentSprint, currentSprintCount) {
+var printStoriesAndSubtasks = function(params) {
+	var storyList = params.storyList;
 	var fields = "";
 	var displayString = "";
 
@@ -138,21 +138,21 @@ var printStoriesAndSubtasks = function(callback, storyList, outputObject, curren
 			}
 
 			////
-			outputObject.push(tempOutputObject);
+			params.outputObject.push(tempOutputObject);
 			////
 
 			//console.log(displayString);
 
 			// Count number of legit stories in out sprint. Remember, storyList contains null references because for some inane reason, 
 			// the API does not allow me to return just the stories in a sprint, in the correct order.
-			currentSprintCount++;
+			params.currentSprintCount++;
 		}
 	}
 
-	console.log("Done! Number of stories in " + currentSprint + ": " + currentSprintCount);
+	console.log("Done! Number of stories in " + params.currentSprint + ": " + params.currentSprintCount);
 
 	// This tells the app that it is done getting all the data and is ready to pass control over to outputData().
-	callback(null, "foo");
+	params.callback(null, "foo");
 
 } // printStoriesAndSubtasks
 
@@ -166,8 +166,9 @@ var printStoriesAndSubtasks = function(callback, storyList, outputObject, curren
 
 
 
-
-var collectSubtasks = function(callback, storyList, outputObject, currentSprint, currentSprintCount) {
+var collectSubtasks = function(params) {
+	var callback = params.callback;
+	var storyList = params.storyList;
 	var queries = []; // this will be fed to async.parallel() later
 
 	var makeQuery = function makeQuery(index, subtaskURL) { // factory function to create the queries
@@ -215,7 +216,7 @@ var collectSubtasks = function(callback, storyList, outputObject, currentSprint,
 
 	// Run queries in parallel
 	async.parallel(queries, function finished() {
-		printStoriesAndSubtasks(callback, storyList, outputObject, currentSprint, currentSprintCount);
+		printStoriesAndSubtasks(params);
 	});
 
 	console.log("Done collecting tasks");
@@ -366,7 +367,13 @@ var server = http.createServer(function(request, response) {
 
 						// Run queries in parallel
 						async.parallel(queries, function finished() {
-							collectSubtasks(callback, storyList, outputObject, currentSprint, currentSprintCount);
+							collectSubtasks({
+								"callback": callback, 
+								"storyList": storyList, 
+								"outputObject": outputObject, 
+								"currentSprint": currentSprint, 
+								"currentSprintCount": currentSprintCount
+							});
 						});
 
 						console.log("Done filtering list of " + storyList.length + " (!!!) stories to include only those that belong to " + currentSprint);
