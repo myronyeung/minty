@@ -54,8 +54,8 @@
 
 /* For readability, explicitly stating that these styles apply to all devices */
 @media all {
-	html {
-		font-size: 14px;
+	.ticket {
+		font-size: 1.5rem;
 		font-family: Helvetica, sans-serif;
 	}
 	.ticket {
@@ -82,7 +82,7 @@
 		margin-bottom: 10px;
 	}
 	.description {
-		font-size: 1.1rem;
+		font-size: 1.5rem;
 		font-weight: bold;
 	}
 	.points {
@@ -94,7 +94,7 @@
 		border-radius: .2in;
 		width: .4in;
 		height: .4in;
-		font-size: 1.25rem;
+		font-size: 1.5rem;
 		font-weight: bold;
 		text-align: center;
 		line-height: .4in;
@@ -281,7 +281,7 @@
 			// Mark selected rows for task addition. First reset checked to empty string.
 			for (var k = 0; k < eRows.length; k++) {
 				eRows[k].className = "";
-				if (eRows[k].querySelector("input[checked=checked")) {
+				if (eRows[k].querySelector("input[checked=checked]")) {
 					eRows[k].className = "include";
 				}
 			}
