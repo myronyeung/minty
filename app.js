@@ -149,6 +149,9 @@ var printStoriesAndSubtasks = function(params) {
 		}
 	}
 
+	// Capture current sprint.
+	params.outputObject["currentSprint"] = params.currentSprint;
+
 	console.log("Done! Number of stories in " + params.currentSprint + ": " + params.currentSprintCount);
 
 	// This tells the app that it is done getting all the data and is ready to pass control over to outputData().
