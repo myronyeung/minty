@@ -12,7 +12,7 @@ var https = require("https"),
 // not change too often.
 // Source: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
 (function authenticateUser() {
-	console.log("authenticateUser()");
+	//console.log("authenticateUser()");
 
 	fs.readFile('conf/settings.json', 'UTF8', function(err, data) {
 		if (err) {
