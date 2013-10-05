@@ -3,7 +3,7 @@ function route(handle, pathname, response, request) {
 
 	// index.js defines all the objects (which are functions) inside the handle object.
 	// requestHandlers.js holds the definitions for these functions.
-	if (typeof handle[pathname] === 'function') {
+	if (typeof handle[pathname] === "function") {
 		handle[pathname](response, request);
 	} else {
 		console.log("No request handler found for " + pathname);
