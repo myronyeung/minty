@@ -36,6 +36,9 @@
 		tbody tr {
 			opacity: 0.3;
 		}
+		th.fn {
+			transform: rotate(-90deg);
+		}
 		.totals {
 			text-align: right;
 		}
@@ -149,6 +152,10 @@
 
 	<h2>{{finalData.currentSprint}}</h2>
 
+{{#finalData.sprintContributors}}
+<p>{{.}}</p>
+{{/finalData.sprintContributors}}
+
 	<form class="screen">
 		<table>
 			<thead>
@@ -158,31 +165,35 @@
 					<th>Description</th>
 					<th>Release</th>
 					<th>Status</th>
-					<th>BL</th>
-					<th>BO</th>
-					<th>BK</th>
-					<th>BM</th>
-					<th>DW</th>
-					<th>KL</th>
-					<th>OO</th>
-					<th>SH</th>
-					<th>SL</th>
+					{{#people.people}}
+					<th class="fn">{{people.fullName}}</th>
+					{{/people.people}}
 					<th></th>
 				</tr>
 				<tr>
 					<th class="totals" colspan="5">Remaining hours</th>
-					<th class="BL total"></th>
-					<th class="BO total"></th>
-					<th class="BK total"></th>
-					<th class="BM total"></th>
-					<th class="DW total"></th>
-					<th class="KL total"></th>
-					<th class="OO total"></th>
-					<th class="SH total"></th>
-					<th class="SL total"></th>
+					{{#people.people}}
+					<th class="{{people.fullNameCompact}} total"></th>
+					{{/people.people}}
 					<th></th>
 				</tr>
 			</thead>
+			<tfoot>
+				<tr>
+					<th colspan="5"></th>
+					{{#people.people}}
+					<th class="fn">{{people.fullName}}</th>
+					{{/people.people}}
+					<th></th>
+				</tr>
+				<tr>
+					<th class="totals" colspan="5">Remaining hours</th>
+					{{#people.people}}
+					<th class="{{people.fullNameCompact}} total"></th>
+					{{/people.people}}
+					<th></th>
+				</tr>
+			</tfoot>
 			<tbody>
 				{{#finalData}}
 				<tr>
@@ -191,47 +202,21 @@
 					<td>{{description}}</td>
 					<td>{{release}}</td>
 					<td>{{status}}</td>
-					<td class="BL task">{{BL}}</td>
-					<td class="BO task">{{BO}}</td>
-					<td class="BK task">{{BK}}</td>
-					<td class="BM task">{{BM}}</td>
-					<td class="DW task">{{DW}}</td>
-					<td class="KL task">{{KL}}</td>
-					<td class="OO task">{{OO}}</td>
-					<td class="SH task">{{SH}}</td>
-					<td class="SL task">{{SL}}</td>
+					<td class="BarryLukens task">{{Barry Lukens}}</td>
+					<td class="BryanOstrum task">{{Bryan Ostrum}}</td>
+					<td class="BillKocik task">{{Bill Kocik}}</td>
+					<td class="BryanMorgan task">{{Bryan Morgan}}</td>
+					<td class="DavidWren task">{{David Wren}}</td>
+					<td class="JamesCoutry task">{{James Coutry}}</td>
+					<td class="JonCampbell task">{{Jon Campbell}}</td>
+					<td class="KevinLuman task">{{Kevin Luman}}</td>
+					<td class="OliviaOsby task">{{Olivia Osby}}</td>
+					<td class="ScottHoffman task">{{Scott Hoffman}}</td>
+					<td class="StevenLu task">{{Steven Lu}}</td>
 					<td><input type="checkbox" name="" checked="checked"/></td>
 				</tr>
 				{{/finalData}}
 			</tbody>
-			<tfoot>
-				<tr>
-					<th colspan="5"></th>
-					<th>BL</th>
-					<th>BO</th>
-					<th>BK</th>
-					<th>BM</th>
-					<th>DW</th>
-					<th>KL</th>
-					<th>OO</th>
-					<th>SH</th>
-					<th>SL</th>
-					<th></th>
-				</tr>
-				<tr>
-					<th class="totals" colspan="5">Remaining hours</th>
-					<th class="BL total"></th>
-					<th class="BO total"></th>
-					<th class="BK total"></th>
-					<th class="BM total"></th>
-					<th class="DW total"></th>
-					<th class="KL total"></th>
-					<th class="OO total"></th>
-					<th class="SH total"></th>
-					<th class="SL total"></th>
-					<th></th>
-				</tr>
-			</tfoot>
 		</table>
 	</form>
 
@@ -246,8 +231,7 @@
 		<li>
 			<ul class="subtasks">
 				{{#subtasks}}
-				<li class="subtask"><span class="fn">{{name}}</span>: <span class="estimate">{{estimate}}</span></li>
-				{{!<li class="subtask"><span class="fn">Barry Lucky</span>: <span class="estimate">12h</span></li>}}
+				<li class="subtask"><span class="fn">{{displayName}}</span>: <span class="estimate">{{estimate}}</span></li>
 				{{/subtasks}}
 			</ul>
 		</li>
@@ -274,7 +258,7 @@
 		}
 
 		function processTable() {
-			var doers = ["BL", "BO", "BK", "BM", "DW", "KL", "OO", "SH", "SL"], // HACK!!!
+			var doers = ["BarryLukens", "BryanOstrum", "BillKocik", "BryanMorgan", "DavidWren", "JamesCoutry", "JonCampbell", "KevinLuman", "OliviaOsby", "ScottHoffman", "StevenLu"], // HACK!!!
 				eTable = document.querySelector("table"),
 				eRows = eTable.querySelectorAll("tbody tr"),
 				eTasks = null,
@@ -335,3 +319,4 @@
 </body>
 
 </html>
+

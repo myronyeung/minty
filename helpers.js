@@ -93,13 +93,16 @@ collectSubtasks = function(params) {
 //	}
 
 printStoriesAndSubtasks = function(params) {
-	var storyList = params.storyList;
-	var fields = "";
-	var displayString = "";
+	var storyList = params.storyList,
+		fields = "",
+		displayString = "";
+
+	params.outputObject["sprintContributors"] = []; // Store contributors for the current sprint.
 
 	for (var i = 0; i < storyList.length; i++) {
 		var storyListElement = storyList[i],
 			tempOutputObject = {};
+
 		if (storyListElement) {
 			fields = storyListElement.info.fields;
 
@@ -118,7 +121,6 @@ printStoriesAndSubtasks = function(params) {
 			tempOutputObject["storyPoints"] = (fields.issuetype.name === "Story" ? (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "N/A") : "");
 			tempOutputObject["release2"] = (fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "N/A");
 			//////
-
 
 
 			displayString =
@@ -144,15 +146,20 @@ printStoriesAndSubtasks = function(params) {
 
 						////
 						//var displayName = (subtasks[subtaskIndex].fields.assignee.displayName).replace(/\W*(\w)\w*/g, "$1").toUpperCase(),
-						var displayName = subtasks[subtaskIndex].fields.assignee.displayName,
-							originalEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.originalEstimateSeconds;
-						remainingEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.remainingEstimateSeconds;
+						var name = subtasks[subtaskIndex].fields.assignee.name,
+							displayName = subtasks[subtaskIndex].fields.assignee.displayName,
+							remainingEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.remainingEstimateSeconds;
 
-						if (tempOutputObject[displayName]) {
-							// There is already one or more tasks for this story/bug assigned to this person.
-							tempOutputObject[displayName] += (remainingEstimateSeconds / 3600);
+						if (tempOutputObject[name]) {
+							// There is already one or more tasks for this story/bug assigned to this person, so add more time to this person.
+							tempOutputObject[name] += (remainingEstimateSeconds / 3600);
 						} else {
-							tempOutputObject[displayName] = remainingEstimateSeconds / 3600;
+							tempOutputObject[name] = remainingEstimateSeconds / 3600;
+						}
+
+						// Add person to list of current sprint contributors.
+						if (params.outputObject.sprintContributors.indexOf(name) === -1) {
+							params.outputObject.sprintContributors.push(name);
 						}
 						////
 					}
@@ -169,7 +176,7 @@ printStoriesAndSubtasks = function(params) {
 					for (var subtaskIndex2 = 0; subtaskIndex2 < numSubtasks2; subtaskIndex2++) {
 						//console.log(subtasks2[subtaskIndex2]);
 						tempOutputObject["subtasks"][subtaskIndex2] = {};
-						tempOutputObject["subtasks"][subtaskIndex2]["name"] = subtasks2[subtaskIndex2].fields.assignee.displayName;
+						tempOutputObject["subtasks"][subtaskIndex2]["displayName"] = subtasks2[subtaskIndex2].fields.assignee.displayName;
 						tempOutputObject["subtasks"][subtaskIndex2]["estimate"] = subtasks2[subtaskIndex2].fields.timetracking.remainingEstimate;
 					}
 				}
