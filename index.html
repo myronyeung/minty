@@ -150,8 +150,9 @@
 <body>
 	<h1 class="screen">Minty: Resource Planning Extension For GreenHopper</h1>
 
-	<h2>{{finalData.currentSprint}}</h2>
+	<h2>{{finalData.currentSprint}} has {{finalData.currentSprintCount}} items</h2>
 
+	<p>FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API</p>
 {{#finalData.sprintContributors}}
 <p>{{.}}</p>
 {{/finalData.sprintContributors}}

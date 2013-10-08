@@ -75,19 +75,28 @@ var server = http.createServer(function(request, response) {
 			// I then had to loop through each one to see if custom field customfield_10311 contained the string "Sprint 15". Yowza!
 			// path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12",
 
-			// Best way! Just use JQL! With one call I can get all stories and bugs from a specific sprint and 
+			// Best way!
+
+			// Just use JQL! With one call I can get all stories and bugs from a specific sprint and 
 			// ordered by rank (rank is how the tickets are hand-ordered in Greenhopper): 
 			// sprint = "Sprint 15" and (type = "story" or type = "bug") order by rank asc
 			// How to use within the JIRA web app: Go to JIRA > Issues > Search for Issues > Paste it into search box > Hit enter
-			// Here is the actual link: https://perfectsense.atlassian.net/rest/api/2/search?jql=sprint%20%3D%20%22Sprint%2015%22%20and
+			// Here is the actual path: /rest/api/2/search?jql=sprint%20%3D%20%22Sprint%2015%22%20and
 			//		%20(type%20%3D%20%22story%22%20or%20type%20%3D%20%22bug%22)%20order%20by%20rank%20asc
 			//
 			// For reference, this call returns information about one ticket.
 			// path: "/rest/api/2/issue/ULIVE-929"
+
+
+			// HACK
+			var sprintQuery = "/rest/api/2/search?jql=sprint%20%3D%20%22" + 
+				"Sprint 15".replace(/ /g, "%20") + // HACK to convert space to a HTML entity.
+				"%22%20and%20(type%20%3D%20%22story%22%20or%20type%20%3D%20%22bug%22)%20order%20by%20rank%20asc";
+
 			var options = {
 				host: jiraHost,
 				// Only url that returns tickets in the same order as in the sprints.
-				path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12",
+				path: sprintQuery,
 				auth: myAuth
 			};
 
@@ -107,83 +116,21 @@ var server = http.createServer(function(request, response) {
 				// Solution to SyntaxError: Unexpected end of input:
 				// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
 				res.on("end", function buildEntireList() {
+					console.log(JSON.parse(data));
+
+					// TODO: rename obj to sprintItems (or something similar).
 					var obj = JSON.parse(data).issues;
 
-					for (var i = 0; i < obj.length-150; i++) {
-						//console.log(obj[i].key);
+					currentSprintCount = obj.total; //TODO: remove currentSprintCount from one of the later for loops.
 
-						// Second approach: build out an array of all the tickets first
-						storyList[i] = {}; // If I do not intialize this element to an empty object first, applying storyList[i].key throws an error.
-						storyList[i].key = obj[i].key;
-					}
-
-					//console.log(storyList.length);
-
-
-					// After a lot of hunting, I finally found an example of a dynamically created array of functions that is passed
-					// into async.parallel!
-					// Source: http://codereview.stackexchange.com/questions/6101/async-callbacks-and-closures-am-i-doing-it-right
-					var queries = []; // this will be fed to async.parallel() later
-
-					var makeQuery = function makeQuery(index) { // factory function to create the queries
-						return function doQuery(callback) {
-							////console.log(index);
-
-							var options = {
-								host: jiraHost,
-								path: "/rest/api/2/issue/" + storyList[index].key
-								//, path: "/rest/api/2/issue/ULIVE-929"
-								//, path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50"
-								,
-								auth: myAuth
-							};
-
-							hitURL(options, index, function addStory(data) {
-
-								var obj = JSON.parse(data),
-									sprintField = (obj.fields && obj.fields.customfield_10311 ? obj.fields.customfield_10311 : null),
-									json = "",
-									findSprint = currentSprint;
-								// Remove stories that do not have sprintField specified or has sprintField specified,
-								// but does not belong to findSprint, e.g. "Sprint 13".
-								// Once we call hitURL once for every story in the set, we can return the final array.
-
-								if (!sprintField || (sprintField && (sprintField.toString()).indexOf(findSprint) === -1)) {
-									//console.log(obj.key);
-
-									// If ticket does not belong to the current sprint, mark it for removal from the story array.
-									// If I do this: storyList.splice(index, 1), 
-									// I end up changing the size and therefore the indices of the array get messed up!
-									storyList[index] = null;
-
-								} else if (sprintField) {
-									// This JIRA ticket belongs to the current sprint, yay!
-									//console.log("What is index? " + index);
-									storyList[index].info = obj;
-								}
-
-								callback();
-
-							}, callback);
-
-						};
-					};
-
-					for (var j = 0; j < storyList.length; j++) { // build the list of tasks to be done in parallel
-						queries.push(makeQuery(j));
-					}
-
-					// Run queries in parallel
-					async.parallel(queries, function finished() {
-						collectSubtasks({
-							"jiraHost": jiraHost,
-							"myAuth": myAuth,
-							"callback": callback, 
-							"storyList": storyList, 
-							"outputObject": outputObject, 
-							"currentSprint": currentSprint, 
-							"currentSprintCount": currentSprintCount
-						});
+					collectSubtasks({
+						"jiraHost": jiraHost,
+						"myAuth": myAuth,
+						"callback": callback, 
+						"storyList": obj, 
+						"outputObject": outputObject, 
+						"currentSprint": currentSprint, 
+						"currentSprintCount": currentSprintCount
 					});
 
 					console.log("Done filtering list of " + storyList.length + " (!!!) stories to include only those that belong to " + currentSprint);

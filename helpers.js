@@ -63,7 +63,7 @@ collectSubtasks = function(params) {
 	for (var i = 0; i < storyList.length; i++) {
 		var storyListElement = storyList[i];
 		if (storyListElement) {
-			var subtasks = storyListElement.info.fields.subtasks,
+			var subtasks = storyListElement.fields.subtasks,
 				numSubtasks = subtasks.length;
 			if (numSubtasks > 0) {
 				for (var subtaskIndex = 0; subtaskIndex < numSubtasks; subtaskIndex++) {
@@ -85,10 +85,11 @@ collectSubtasks = function(params) {
 
 }
 
+// TODO: "info" key may not longer be valid. Revisit.
 // Ultimately an element of storyList looks like this for example:
 //	storyList[1] = {
 //	"key" : "U-929",
-//	"info" : { Big JSON object returned from https://perfectsense.atlassian.net/rest/api/2/issue/ULIVE-929 }
+//	"info" : { Big JSON object returned from host/rest/api/2/issue/ULIVE-929 }
 //	"subtasks" {[array of subtasks]}
 //	}
 
@@ -104,7 +105,7 @@ printStoriesAndSubtasks = function(params) {
 			tempOutputObject = {};
 
 		if (storyListElement) {
-			fields = storyListElement.info.fields;
+			fields = storyListElement.fields;
 
 			////
 			tempOutputObject["key"] = storyListElement.key;
