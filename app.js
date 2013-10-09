@@ -7,8 +7,7 @@ var http = require("http"),
 	mustache = require("mustache"),
 	helpers = require("./helpers"),
 	jiraHost = "",
-	myAuth = "",
-	peopleArray = [];
+	myAuth = "";
 
 // Get authentication information from local file (not checked into GitHub). For performance reasons, 
 // this is only called when server starts up, because the JIRA host name and user authentication should 
@@ -22,8 +21,7 @@ var http = require("http"),
 		} else {
 			var loginInfo = JSON.parse(data);
 			jiraHost = loginInfo.jiraHost;
-			myAuth = loginInfo.auth;	
-			peopleArray = loginInfo.people
+			myAuth = loginInfo.auth;
 		}
 	});
 }());
@@ -85,7 +83,7 @@ var server = http.createServer(function(request, response) {
 			//		%20(type%20%3D%20%22story%22%20or%20type%20%3D%20%22bug%22)%20order%20by%20rank%20asc
 			//
 			// For reference, this call returns information about one ticket.
-			// path: "/rest/api/2/issue/ULIVE-929"
+			// path: "/rest/api/2/issue/JIRA-929"
 
 
 			// HACK
@@ -153,21 +151,14 @@ var server = http.createServer(function(request, response) {
 		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
 		// Wrap the data in a global object... (mustache starts from an object then parses)
 		var rData = {
-			"finalData": outputObject,
-			"people": {
-				"people": peopleArray,
-				"fullName": function() {
-					return this.firstName + " " + this.lastName;
-				},
-				"fullNameCompact": function() {
-					return this.firstName + this.lastName;
-				}
-			}
+			"finalData": outputObject
 		};
-		var page = fs.readFileSync("index.html", "utf8"); // bring in the HTML file
-		var html = mustache.to_html(page, rData); // replace all of the data
+		var page = fs.readFileSync("index.html", "utf8"), // bring in the HTML file
+			html = mustache.to_html(page, rData); // replace all of the data
 
-		//response.end("Hello World\n");
+		// Important debug tool, do not remove this.
+		console.log("outputObject: %j", outputObject);
+
 		response.end(html);
 
 	}); // async.series

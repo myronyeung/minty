@@ -89,7 +89,7 @@ collectSubtasks = function(params) {
 // Ultimately an element of storyList looks like this for example:
 //	storyList[1] = {
 //	"key" : "U-929",
-//	"info" : { Big JSON object returned from host/rest/api/2/issue/ULIVE-929 }
+//	"info" : { Big JSON object returned from host/rest/api/2/issue/JIRA-929 }
 //	"subtasks" {[array of subtasks]}
 //	}
 

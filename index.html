@@ -46,6 +46,9 @@
 			font-size: 1.5rem;
 			font-weight: bold;
 		}
+		.clearBoth {
+			clear: both;
+		}
 
 
 
@@ -153,9 +156,6 @@
 	<h2>{{finalData.currentSprint}} has {{finalData.currentSprintCount}} items</h2>
 
 	<p>FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API</p>
-{{#finalData.sprintContributors}}
-<p>{{.}}</p>
-{{/finalData.sprintContributors}}
 
 	<form class="screen">
 		<table>
@@ -239,6 +239,24 @@
 	</ul>
 	{{/finalData}}
 
+	<div class="hidden clearBoth">
+		<section>
+			<h2>Text View</h2>
+			{{#finalData}}
+				<p>{{type}} {{key}} {{description}} {{release}} {{status}} 
+					{{#subtasks}}{{displayName}}: {{estimate}}{{^estimate}}N/A{{/estimate}} {{/subtasks}}</p>
+			{{/finalData}}
+		</section>
+
+		<section>
+			<h2>Contributors</h2>
+			<ul>
+				{{#finalData.sprintContributors}}
+				<li>{{.}}</li>
+				{{/finalData.sprintContributors}}
+			</ul>
+		</section>
+	</div>
 
 	<script>
 		document.addEventListener("DOMContentLoaded", function init (event) {
