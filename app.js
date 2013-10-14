@@ -14,7 +14,9 @@ var http = require("http"),
  * this is only called when server starts up, because the JIRA host name and user authentication should 
  * not change too often.
  *
- * Source: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
+ * Sources:
+ * Why: http://ejohn.org/blog/keeping-passwords-in-source-control/
+ * How: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
  */
 (function authenticate() {
 
