@@ -10,15 +10,14 @@ Create under minty: conf/settings.json
 
 JSON looks like this:
 
-> {
+`{  
+    "jiraHost" : host, // "www.atlassian.net",  
+    "auth": username:password // "myronyeung:jira123"  
+  }`
 
-> 	"jiraHost" : host, // "www.atlassian.net",
-
-> 	"auth": username:password // "myronyeung:jira123"
-
-> }
-
-Sources:
-Why: http://ejohn.org/blog/keeping-passwords-in-source-control/
+Sources:  
+Why: http://ejohn.org/blog/keeping-passwords-in-source-control/  
 How: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
+
+
 
