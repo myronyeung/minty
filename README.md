@@ -11,8 +11,11 @@ Create under minty: conf/settings.json
 JSON looks like this:
 
 > {
+
 > 	"jiraHost" : host, // "www.atlassian.net",
+
 > 	"auth": username:password // "myronyeung:jira123"
+
 > }
 
 Sources:
