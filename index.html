@@ -157,6 +157,8 @@
 
 	<p>FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API</p>
 
+	<p>Test for new Minty. foo: {{finalData.foo}}</p>
+
 	<form class="screen">
 		<table>
 			<thead>
@@ -166,43 +168,43 @@
 					<th>Description</th>
 					<th>Release</th>
 					<th>Status</th>
-					{{#people.people}}
-					<th class="fn">{{people.fullName}}</th>
-					{{/people.people}}
+					{{#finalData.contributors}}
+					<th class="fn">{{.}}</th>
+					{{/finalData.contributors}}
 					<th></th>
 				</tr>
 				<tr>
 					<th class="totals" colspan="5">Remaining hours</th>
-					{{#people.people}}
-					<th class="{{people.fullNameCompact}} total"></th>
-					{{/people.people}}
+					{{#finalData.contributors}}
+					<th class="fn">{{.}}</th>
+					{{/finalData.contributors}}
 					<th></th>
 				</tr>
 			</thead>
 			<tfoot>
 				<tr>
 					<th colspan="5"></th>
-					{{#people.people}}
-					<th class="fn">{{people.fullName}}</th>
-					{{/people.people}}
+					{{#finalData.contributors}}
+					<th class="fn">{{.}}</th>
+					{{/finalData.contributors}}
 					<th></th>
 				</tr>
 				<tr>
 					<th class="totals" colspan="5">Remaining hours</th>
-					{{#people.people}}
-					<th class="{{people.fullNameCompact}} total"></th>
-					{{/people.people}}
+					{{#finalData.contributors}}
+					<th class="fn">{{.}}</th>
+					{{/finalData.contributors}}
 					<th></th>
 				</tr>
 			</tfoot>
 			<tbody>
-				{{#finalData}}
+				{{#finalData.issues}}
 				<tr>
-					<td>{{type}}</td>
+					<td>{{fields.issuetype.name}}</td>
 					<td>{{key}}</td>
-					<td>{{description}}</td>
-					<td>{{release}}</td>
-					<td>{{status}}</td>
+					<td>{{fields.summary}}</td>
+					<td>{{fields.customfield_10002}}</td>
+					<td>{{#fields.fixVersions}}{{name}} {{/fields.fixVersions}}</td>
 					<td class="BarryLukens task">{{Barry Lukens}}</td>
 					<td class="BryanOstrum task">{{Bryan Ostrum}}</td>
 					<td class="BillKocik task">{{Bill Kocik}}</td>
@@ -216,44 +218,63 @@
 					<td class="StevenLu task">{{Steven Lu}}</td>
 					<td><input type="checkbox" name="" checked="checked"/></td>
 				</tr>
-				{{/finalData}}
+				{{/finalData.issues}}
 			</tbody>
 		</table>
 	</form>
 
 
-	{{#finalData}}
-	<ul class="ticket {{type2}}">
-		<li class="type">{{type2}}</li>
+	{{#finalData.issues}}
+	<ul class="ticket {{fields.issuetype.name}}">
+		<li class="type">{{fields.issuetype.name}}</li>
 		<li class="id">{{key}}</li>
-		<li class="description">{{description}}</li>
-		{{#storyPoints}}<li class="points">{{storyPoints}}</li>{{/storyPoints}}
-		<li class="release">{{release2}}</li>
+		<li class="description">{{fields.summary}}</li>
+		{{#fields.customfield_10002}}<li class="points">{{fields.customfield_10002}}</li>{{/fields.customfield_10002}}
+		{{#fields.fixVersions}}<li class="release">{{name}}</li>{{/fields.fixVersions}}
 		<li>
 			<ul class="subtasks">
-				{{#subtasks}}
-				<li class="subtask"><span class="fn">{{displayName}}</span>: <span class="estimate">{{estimate}}</span></li>
-				{{/subtasks}}
+				{{#fields.subtasks}}
+				<li class="subtask">
+					<span class="fn">{{subtask.fields.assignee.displayName}}</span>: 
+					<span class="estimate">
+						{{subtask.fields.timetracking.remainingEstimate}}
+						{{^subtask.fields.timetracking.remainingEstimate}}TBD{{/subtask.fields.timetracking.remainingEstimate}}
+					</span>
+				</li>
+				{{/fields.subtasks}}
 			</ul>
 		</li>
 	</ul>
-	{{/finalData}}
+	{{/finalData.issues}}
 
 	<div class="hidden clearBoth">
 		<section>
 			<h2>Text View</h2>
+			{{#finalData.issues}}
+				<p>
+					{{fields.issuetype.name}} {{fields.customfield_10002}} {{key}} {{fields.summary}} 
+					{{#fields.fixVersions}}{{name}}{{/fields.fixVersions}} {{fields.status.name}} 
+					{{#fields.subtasks}}
+						{{subtask.fields.assignee.displayName}}: 
+						{{subtask.fields.timetracking.remainingEstimate}}
+						{{^subtask.fields.timetracking.remainingEstimate}}TBD{{/subtask.fields.timetracking.remainingEstimate}}
+					{{/fields.subtasks}}
+				</p>
+			{{/finalData.issues}}
+
+
 			{{#finalData}}
 				<p>{{type}} {{key}} {{description}} {{release}} {{status}} 
-					{{#subtasks}}{{displayName}}: {{estimate}}{{^estimate}}N/A{{/estimate}} {{/subtasks}}</p>
+					{{#subtasks}}{{displayName}}: {{estimate}}{{^estimate}}TBD{{/estimate}} {{/subtasks}}</p>
 			{{/finalData}}
 		</section>
 
 		<section>
 			<h2>Contributors</h2>
 			<ul>
-				{{#finalData.sprintContributors}}
+				{{#finalData.contributors}}
 				<li>{{.}}</li>
-				{{/finalData.sprintContributors}}
+				{{/finalData.contributors}}
 			</ul>
 		</section>
 	</div>
@@ -338,4 +359,3 @@
 </body>
 
 </html>
-

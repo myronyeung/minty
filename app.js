@@ -9,10 +9,13 @@ var http = require("http"),
 	jiraHost = "",
 	myAuth = "";
 
-// Get authentication information from local file (not checked into GitHub). For performance reasons, 
-// this is only called when server starts up, because the JIRA host name and user authentication should 
-// not change too often.
-// Source: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
+/** 
+ * Get authentication information from local file (not checked into GitHub). For performance reasons, 
+ * this is only called when server starts up, because the JIRA host name and user authentication should 
+ * not change too often.
+ *
+ * Source: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
+ */
 (function authenticate() {
 
 	fs.readFile("conf/settings.json", "UTF8", function(err, data) {
@@ -24,18 +27,20 @@ var http = require("http"),
 			myAuth = loginInfo.auth;
 		}
 	});
-}());
+}()); 
 
-// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
 
-// Configure our HTTP server to respond with Hello World to all requests.
+/**
+ * Configure our HTTP server to respond with Hello World to all requests.
+ *
+ * Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
+ */
 var server = http.createServer(function(request, response) {
 	var currentSprint = "",
-		currentSprintCount = 0,
-		storyList = [],
-		outputObject = [];
+		totalIssues = 0,
+		rawCompleteOutput = {};
 
-	// Intercept pesky favicon request.
+	// Intercept pesky favicon requests.
 	if (request.url === "/favicon.ico") {
 		console.log("favicon requested");
 		return;
@@ -46,8 +51,8 @@ var server = http.createServer(function(request, response) {
 		"Content-Type": "text/html"
 	});
 
-	var url_parts = url.parse(request.url, true);
-	var query = url_parts.query;
+	var url_parts = url.parse(request.url, true),
+		query = url_parts.query;
 
 	currentSprint = "Sprint " + query["sprint"];
 
@@ -55,7 +60,7 @@ var server = http.createServer(function(request, response) {
 	console.log("Current Sprint: " + currentSprint);
 
 	async.series([
-		function startQueries(callback) {
+		function collectIssues(callback) {
 
 			console.log("Start querying " + currentSprint);
 
@@ -88,7 +93,7 @@ var server = http.createServer(function(request, response) {
 
 			// HACK
 			var sprintQuery = "/rest/api/2/search?jql=sprint%20%3D%20%22" + 
-				"Sprint 15".replace(/ /g, "%20") + // HACK to convert space to a HTML entity.
+				currentSprint.replace(/ /g, "%20") + // HACK to convert space to a HTML entity.
 				"%22%20and%20(type%20%3D%20%22story%22%20or%20type%20%3D%20%22bug%22)%20order%20by%20rank%20asc";
 
 			var options = {
@@ -114,24 +119,28 @@ var server = http.createServer(function(request, response) {
 				// Solution to SyntaxError: Unexpected end of input:
 				// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
 				res.on("end", function buildEntireList() {
-					console.log(JSON.parse(data));
 
-					// TODO: rename obj to sprintItems (or something similar).
-					var obj = JSON.parse(data).issues;
+					// TODO: rename sprintObj to something more appropriate. Rename obj to sprintItems or issues (or something similar).
+					var sprintObj = JSON.parse(data);
 
-					currentSprintCount = obj.total; //TODO: remove currentSprintCount from one of the later for loops.
+					totalIssues = sprintObj.total;
+
+					rawCompleteOutput = sprintObj;
+
+//					console.log("########## rawCompleteOutput after initial call to build list of stories ##########");
+//					console.log("%j", rawCompleteOutput);
+
 
 					collectSubtasks({
 						"jiraHost": jiraHost,
 						"myAuth": myAuth,
-						"callback": callback, 
-						"storyList": obj, 
-						"outputObject": outputObject, 
+						"callback": callback,
+						"sprintObj": sprintObj, 
 						"currentSprint": currentSprint, 
-						"currentSprintCount": currentSprintCount
+						"totalIssues": totalIssues
 					});
 
-					console.log("Done filtering list of " + storyList.length + " (!!!) stories to include only those that belong to " + currentSprint);
+					console.log("There are " + totalIssues + " issues in " + currentSprint);
 				});
 
 			}); // req = https.request
@@ -145,19 +154,20 @@ var server = http.createServer(function(request, response) {
 		}
 	],
 
-	// Callback from async.series
-	function outputData(err, results) {
+	// Callback from async.series. resultsArray stores callback result from each task.
+	function outputData(err, resultsArray) {
 
 		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
 		// Wrap the data in a global object... (mustache starts from an object then parses)
 		var rData = {
-			"finalData": outputObject
+			"finalData": rawCompleteOutput
 		};
 		var page = fs.readFileSync("index.html", "utf8"), // bring in the HTML file
 			html = mustache.to_html(page, rData); // replace all of the data
 
 		// Important debug tool, do not remove this.
-		console.log("outputObject: %j", outputObject);
+		//console.log("########## rawCompleteOutput after call to outputData() ##########");
+		//console.log("rawCompleteOutput: %j", rawCompleteOutput);
 
 		response.end(html);
 
