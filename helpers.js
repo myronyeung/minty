@@ -16,11 +16,11 @@ authenticate  = function(callback) {
 			return console.log(err);
 		} else {
 			var loginInfo = JSON.parse(data),
-				options = {};
-				options.jiraHost = loginInfo.jiraHost;
-				options.myAuth = loginInfo.auth;
+				authentication = {};
+				authentication.jiraHost = loginInfo.jiraHost;
+				authentication.myAuth = loginInfo.auth;
 
-			callback(null, options);
+			callback(null, authentication);
 		}
 	});
 
@@ -218,7 +218,6 @@ formatIssues = function(params) {
 
 	// This tells the app that it is done getting all the data and is ready to pass control 
 	// over to outputData() with formattedIssue as the "return" item.
-	console.log(formattedIssue);
 	callback(null, formattedIssue);
 
 } // formatIssues

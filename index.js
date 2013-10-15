@@ -5,17 +5,14 @@
 // index.js defines all the objects (which are functions) inside the handle object.
 
 var async = require("async"),
-	authentication = {
-		"jiraHost": "MISSING!",
-		"myAuth": "MISSING!"
-	},
 	helpers = require("./helpers"),
 	requestHandlers = require("./requestHandlers"),
 	router = require("./router"),
 	server = require("./server");
 
-
-async.series([
+// In this case, async.waterfall makes more sense than async.series, because
+// I only want to pass a single object to the callback, not an array of objects.
+async.waterfall([
 	function(callback) {
 		// For performance reasons, this is only called when server starts up, 
 		// because the JIRA host name and user authentication should not change too often.
@@ -23,12 +20,11 @@ async.series([
 	}
 ],
 // Callback
-function(err, results) {
+function(err, result) {
 
-	authentication.jiraHost = results[0].jiraHost;
-	authentication.myAuth = results[0].myAuth;
+	authentication = result;
 
-	console.log("Authentication: " + authentication.jiraHost + ", " + authentication.myAuth);
+	console.log("Authentication.jiraHost: " + authentication.jiraHost);
 
 	var handle = {};
 	handle["/"] = requestHandlers.start;
