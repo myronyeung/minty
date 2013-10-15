@@ -11,4 +11,5 @@ function route(handle, pathname, response, request, authentication) {
 		handle["/error"](response, request);
 	}
 }
+
 exports.route = route;

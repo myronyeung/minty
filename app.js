@@ -1,13 +1,13 @@
-var http = require("http"),
-	https = require("https"),
-	url = require("url"),
+var async = require("async"),
 	fs = require("fs"),
-	async = require("async"),
-	sys = require("sys"),
-	mustache = require("mustache"),
 	helpers = require("./helpers"),
+	http = require("http"),
+	https = require("https"),
 	jiraHost = "",
-	myAuth = "";
+	myAuth = "",
+	mustache = require("mustache"),
+	sys = require("sys"),
+	url = require("url");
 
 /** 
  * Get authentication information from local file (not checked into GitHub). For performance reasons, 
