@@ -23,6 +23,7 @@ authenticate  = function(callback) {
 			callback(null, options);
 		}
 	});
+
 } // authenticate
 
 
@@ -215,8 +216,10 @@ formatIssues = function(params) {
 
 	console.log("Done! Number of stories in " + params.currentSprint + ": " + params.currentSprintCount);
 
-	// This tells the app that it is done getting all the data and is ready to pass control over to outputData().
-	callback(null, "foo");
+	// This tells the app that it is done getting all the data and is ready to pass control 
+	// over to outputData() with formattedIssue as the "return" item.
+	console.log(formattedIssue);
+	callback(null, formattedIssue);
 
 } // formatIssues
 

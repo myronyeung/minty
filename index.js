@@ -38,5 +38,5 @@ function(err, results) {
 	handle["/error"] = requestHandlers.error;
 
 	server.start(router.route, handle, authentication);
-	
+
 });
