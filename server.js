@@ -1,5 +1,5 @@
-var http = require("http");
-var url = require("url");
+var http = require("http"),
+	url = require("url");
 
 function start(route, handle, authentication) {
 	function onRequest(request, response) {

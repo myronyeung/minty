@@ -1,5 +1,6 @@
 var https = require("https"),
 	async = require("async"),
+	url = require("url"),
 	fs = require("fs");
 
 /** 
@@ -24,6 +25,15 @@ authenticate  = function(callback) {
 		}
 	});
 } // authenticate
+
+
+/**
+ * Get URL parameters.
+ *
+ */
+parseURL = function(URL, parseQueryString) {
+	return (url.parse(URL, parseQueryString)).query;
+}
 
 
 /**

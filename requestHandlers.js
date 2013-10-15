@@ -1,5 +1,6 @@
 
-var querystring = require("querystring"),
+var url = require("url"),
+	querystring = require("querystring"),
 	fs = require("fs"),
 	util = require("util"),
 	mustache = require("mustache"),
@@ -8,6 +9,14 @@ var querystring = require("querystring"),
 
 function start(response, request, authentication) {
 	console.log("Request handler 'start' was called.");
+
+	var query = parseURL(request.url, true);
+
+	var currentSprint = "Sprint " + query["sprint"];
+
+	console.log("Current Sprint: " + currentSprint);
+
+
 
 	// Thank you stackoverflow.com for a quick workaround for viewing objects with circular references: use util.inspect in Node.js.
 	//console.log("response: " + util.inspect(response));
