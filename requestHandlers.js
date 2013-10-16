@@ -176,7 +176,7 @@ function start(response, request, authentication) {
 				formattedIssues[i].key = completeSprintObj.issues[i].key;
 				formattedIssues[i].summary = completeSprintObj.issues[i].fields.summary;
 				formattedIssues[i].type = completeSprintObj.issues[i].fields.issuetype.name;
-				formattedIssues[i].storyPoints = (formattedIssues[i].type === "Story" ? (completeSprintObj.issues[i].fields.customfield_10002 ? parseInt(completeSprintObj.issues[i].fields.customfield_10002) : "N/A") : "");
+				formattedIssues[i].storyPoints = (formattedIssues[i].type === "Story" ? (completeSprintObj.issues[i].fields.customfield_10002 ? parseInt(completeSprintObj.issues[i].fields.customfield_10002) : "TBD") : "");
 				formattedIssues[i].status = completeSprintObj.issues[i].fields.status.name;
 				
 				formattedIssues[i].fixVersions = [];
