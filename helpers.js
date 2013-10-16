@@ -79,18 +79,21 @@ hitURL = function(options, index, func, callback) {
  */
  collectSubtasks = function(params) {
 
-	var callback = params.callback,
-		sprintObj = params.sprintObj,
+	var jiraHost = params.authentication.jiraHost,
+		myAuth = params.authentication.myAuth,
+		wipSprintObj = params.sprintObj,
+		callback = params.callback,
 		issues = sprintObj.issues,
-		queries = [], // this will be fed to async.parallel() later
+		queries = []; // this will be fed to async.parallel() later
 
-		makeQuery = function makeQuery(subtasksObject, subtaskURL) { // factory function to create the queries
+	// Factory function to create the queries.
+	makeQuery = function makeQuery(subtasksObject, subtaskURL) {
+
 		return function doQuery(callback) {
-			////console.log(index);
 
 			var options = {
-				host: params.jiraHost,
-				auth: params.myAuth,
+				host: jiraHost,
+				auth: myAuth,
 				path: subtaskURL
 			};
 
@@ -103,13 +106,13 @@ hitURL = function(options, index, func, callback) {
 				subtasksObject["subtask"] = obj;
 
 				// Add task owner to contributor list.
-				sprintObj["contributors"] = sprintObj["contributors"] || [];
+				wipSprintObj["contributors"] = wipSprintObj["contributors"] || [];
 
 				var assignee = subtasksObject["subtask"].fields.assignee,
 					name = assignee.name
 
-				if (sprintObj["contributors"].indexOf(name) === -1) {
-					sprintObj["contributors"].push(name);
+				if (wipSprintObj["contributors"].indexOf(name) === -1) {
+					wipSprintObj["contributors"].push(name);
 				}
 
 				callback();

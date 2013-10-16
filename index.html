@@ -153,78 +153,70 @@
 <body>
 	<h1 class="screen">Minty: Resource Planning Extension For GreenHopper</h1>
 
-	<h2>{{finalData.currentSprint}} has {{finalData.currentSprintCount}} items</h2>
+	<h2>{{sprint.id}} has {{sprint.total}} items</h2>
 
-	<p>FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API</p>
-
-	<p>Test for new Minty. foo: {{finalData.foo}}</p>
+	<p>FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API. I will deal with this later.</p>
 
 	<form class="screen">
 		<table>
 			<thead>
 				<tr>
 					<th>Type</th>
+					<th>Story Points</th>
 					<th>Key</th>
 					<th>Description</th>
 					<th>Release</th>
 					<th>Status</th>
-					{{#finalData.contributors}}
+					{{#sprint.contributors}}
 					<th class="fn">{{.}}</th>
-					{{/finalData.contributors}}
+					{{/sprint.contributors}}
 					<th></th>
 				</tr>
 				<tr>
-					<th class="totals" colspan="5">Remaining hours</th>
-					{{#finalData.contributors}}
-					<th class="fn">{{.}}</th>
-					{{/finalData.contributors}}
+					<th class="totals" colspan="6">Remaining hours</th>
+					{{#sprint.contributors}}
+					<th class="{{.}} total">{{.}}</th>
+					{{/sprint.contributors}}
 					<th></th>
 				</tr>
 			</thead>
 			<tfoot>
 				<tr>
-					<th colspan="5"></th>
-					{{#finalData.contributors}}
+					<th colspan="6"></th>
+					{{#sprint.contributors}}
 					<th class="fn">{{.}}</th>
-					{{/finalData.contributors}}
+					{{/sprint.contributors}}
 					<th></th>
 				</tr>
 				<tr>
-					<th class="totals" colspan="5">Remaining hours</th>
-					{{#finalData.contributors}}
-					<th class="fn">{{.}}</th>
-					{{/finalData.contributors}}
+					<th class="totals" colspan="6">Remaining hours</th>
+					{{#sprint.contributors}}
+					<th class="{{.}} total">{{.}}</th>
+					{{/sprint.contributors}}
 					<th></th>
 				</tr>
 			</tfoot>
 			<tbody>
-				{{#finalData.issues}}
+				{{#sprint.issues}}
 				<tr>
-					<td>{{fields.issuetype.name}}</td>
+					<td>{{type}}</td>
+					<td>{{storyPoints}}</td>
 					<td>{{key}}</td>
-					<td>{{fields.summary}}</td>
-					<td>{{fields.customfield_10002}}</td>
-					<td>{{#fields.fixVersions}}{{name}} {{/fields.fixVersions}}</td>
-					<td class="BarryLukens task">{{Barry Lukens}}</td>
-					<td class="BryanOstrum task">{{Bryan Ostrum}}</td>
-					<td class="BillKocik task">{{Bill Kocik}}</td>
-					<td class="BryanMorgan task">{{Bryan Morgan}}</td>
-					<td class="DavidWren task">{{David Wren}}</td>
-					<td class="JamesCoutry task">{{James Coutry}}</td>
-					<td class="JonCampbell task">{{Jon Campbell}}</td>
-					<td class="KevinLuman task">{{Kevin Luman}}</td>
-					<td class="OliviaOsby task">{{Olivia Osby}}</td>
-					<td class="ScottHoffman task">{{Scott Hoffman}}</td>
-					<td class="StevenLu task">{{Steven Lu}}</td>
+					<td>{{summary}}</td>
+					<td>{{#fixVersions}}{{.}} {{/fixVersions}}</td>
+					<td>{{status}}</td>
+					{{#subtasks}}
+					<td class="{{name}} task">{{remainingEstimateHours}}</td>
+					{{/subtasks}}
 					<td><input type="checkbox" name="" checked="checked"/></td>
 				</tr>
-				{{/finalData.issues}}
+				{{/sprint.issues}}
 			</tbody>
 		</table>
 	</form>
 
 
-	{{#finalData.issues}}
+	{{#sprint.issues}}
 	<ul class="ticket {{fields.issuetype.name}}">
 		<li class="type">{{fields.issuetype.name}}</li>
 		<li class="id">{{key}}</li>
@@ -245,12 +237,12 @@
 			</ul>
 		</li>
 	</ul>
-	{{/finalData.issues}}
+	{{/sprint.issues}}
 
 	<div class="hidden clearBoth">
 		<section>
 			<h2>Text View</h2>
-			{{#finalData.issues}}
+			{{#sprint.issues}}
 				<p>
 					{{fields.issuetype.name}} {{fields.customfield_10002}} {{key}} {{fields.summary}} 
 					{{#fields.fixVersions}}{{name}}{{/fields.fixVersions}} {{fields.status.name}} 
@@ -260,21 +252,21 @@
 						{{^subtask.fields.timetracking.remainingEstimate}}TBD{{/subtask.fields.timetracking.remainingEstimate}}
 					{{/fields.subtasks}}
 				</p>
-			{{/finalData.issues}}
+			{{/sprint.issues}}
 
 
-			{{#finalData}}
+			{{#sprint}}
 				<p>{{type}} {{key}} {{description}} {{release}} {{status}} 
 					{{#subtasks}}{{displayName}}: {{estimate}}{{^estimate}}TBD{{/estimate}} {{/subtasks}}</p>
-			{{/finalData}}
+			{{/sprint}}
 		</section>
 
 		<section>
 			<h2>Contributors</h2>
 			<ul>
-				{{#finalData.contributors}}
+				{{#sprint.contributors}}
 				<li>{{.}}</li>
-				{{/finalData.contributors}}
+				{{/sprint.contributors}}
 			</ul>
 		</section>
 	</div>
@@ -298,7 +290,8 @@
 		}
 
 		function processTable() {
-			var doers = ["BarryLukens", "BryanOstrum", "BillKocik", "BryanMorgan", "DavidWren", "JamesCoutry", "JonCampbell", "KevinLuman", "OliviaOsby", "ScottHoffman", "StevenLu"], // HACK!!!
+			// I do not like the trailing comma in doers. mustache.js is a little too logic-less.
+			var doers = [{{#sprint.contributors}}"{{.}}", {{/sprint.contributors}}],
 				eTable = document.querySelector("table"),
 				eRows = eTable.querySelectorAll("tbody tr"),
 				eTasks = null,

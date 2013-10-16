@@ -11,27 +11,21 @@ var async = require("async"),
 function start(response, request, authentication) {
 	console.log("Request handler 'start' was called.");
 
+	async.waterfall([
+		// Get current sprint.
+		function(callback) {
+			var query = parseURL(request.url, true),
+				currentSprint = "Sprint " + query["sprint"],
+				wipSprintObj = {};
 
-// Pass response, request, authentication, query
+			wipSprintObj.id = currentSprint;
 
-	var query = parseURL(request.url, true);
+			callback(null, wipSprintObj);
+		},
+		// Get list of issues in current sprint.
+		function(wipSprintObj, callback) {
+			var currentSprint = wipSprintObj.id;
 
-	var currentSprint = "Sprint " + query["sprint"];
-
-
-// Then get back JSON object with everything
-
-
-
-
-	async.series([
-		function collectIssues(callback) {
-
-			console.log("Start querying " + currentSprint);
-
-			// TODO: Add back long comments about other paths that I explored and why they did not work.
-
-			// HACK
 			var sprintQuery = "/rest/api/2/search?jql=sprint%20%3D%20%22" + 
 				currentSprint.replace(/ /g, "%20") + // HACK to convert space to a HTML entity.
 				"%22%20and%20(type%20%3D%20%22story%22%20or%20type%20%3D%20%22bug%22)%20order%20by%20rank%20asc";
@@ -42,7 +36,6 @@ function start(response, request, authentication) {
 				path: sprintQuery,
 				auth: authentication.myAuth
 			};
-
 
 			var req = https.request(options, function(res) {
 				//console.log("statusCode: ", res.statusCode);
@@ -55,58 +48,173 @@ function start(response, request, authentication) {
 					//process.stdout.write(json);
 				});
 
-				// Build list of all stories and bugs, most of which does not belong to our sprint. See path above.	
 				// Solution to SyntaxError: Unexpected end of input:
 				// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
 				res.on("end", function buildEntireList() {
 
-					// TODO: rename sprintObj to something more appropriate. Rename obj to sprintItems or issues (or something similar).
-					var sprintObj = JSON.parse(data);
+					var sprintObjRaw = JSON.parse(data);
 
-					totalIssues = sprintObj.total;
+					wipSprintObj.total = sprintObjRaw.total;
+					wipSprintObj.issues = sprintObjRaw.issues;
 
-					rawCompleteOutput = sprintObj;
+					callback(null, wipSprintObj);
 
-					collectSubtasks({
-						"jiraHost": authentication.jiraHost,
-						"myAuth": authentication.myAuth,
-						"callback": callback,
-						"sprintObj": sprintObj, 
-						"currentSprint": currentSprint, 
-						"totalIssues": totalIssues
-					});
-
-					console.log("There are " + totalIssues + " issues in " + currentSprint);
+					console.log("There are " + wipSprintObj.total + " issues in " + wipSprintObj.id);
 				});
 
 			}); // req = https.request
 
 			req.end();
 
-			req.on("error", function(e) {
-				console.error(e);
+			req.on("error", function(err) {
+				console.error(err);
+				callback(err);
+			});
+		},
+		// Collect subtasks for each issue.
+		function(wipSprintObj, callback) {
+
+			var jiraHost = authentication.jiraHost,
+				myAuth = authentication.myAuth,
+				issues = wipSprintObj.issues,
+				queries = []; // this will be fed to async.parallel() later
+
+			// Factory function to create the queries.
+			makeQuery = function makeQuery(subtasksObject, subtaskURL) {
+
+				return function doQuery(callback) {
+
+					var options = {
+						host: jiraHost,
+						auth: myAuth,
+						path: subtaskURL
+					};
+
+					hitURL(options, null, function addSubtask(data) {
+
+						var obj = JSON.parse(data);
+
+						// Add subtask to subtask summary, which is a child of the subtasks array, which is a child of the parent issue. 
+						// I am adding the entire subtask, because I value having all the data for future-proofing over performance. 
+						subtasksObject["subtask"] = obj;
+
+						// Add task owner to contributor list.
+						wipSprintObj["contributors"] = wipSprintObj["contributors"] || [];
+
+						var assignee = subtasksObject["subtask"].fields.assignee,
+							name = assignee.name
+
+						if (wipSprintObj["contributors"].indexOf(name) === -1) {
+							wipSprintObj["contributors"].push(name);
+						}
+
+						callback(null, null);
+
+					}, callback);
+
+				};
+			};
+
+			// Build the list of queries to be done in parallel.
+			for (var i = 0; i < issues.length; i++) {
+				var issue = issues[i];
+
+				//TODO: Is this conditional necessary?
+				if (issue) {
+					var subtasks = issue.fields.subtasks,
+						numSubtasks = subtasks.length;
+
+					if (numSubtasks > 0) {
+						for (var subtaskIndex = 0; subtaskIndex < numSubtasks; subtaskIndex++) {
+							// First param: Subtask summary, which is a child of the subtasks array, which is a child of the parent issue.
+							// Second param: REST endpoint of each subtask.
+							queries.push(makeQuery(subtasks[subtaskIndex], subtasks[subtaskIndex].self));
+						}
+					}
+				}
+			}
+
+			async.parallel(queries, function(err, results) {
+				// Do not need results, which is an array of subtasks, because 
+				// I have already appended each subtask to its parent story in 
+				// wipSprintObj, which I "rename" to completeSprintObj. This "renaming"
+				// is redundant, but I want to make it very obvious that the
+				// object representing the sprint has finally reached its end state.
+				var completeSprintObj = wipSprintObj;
+
+				//console.log(util.inspect(completeSprintObj, { showHidden: false, depth: null })); // infinite depth
+
+				callback(null, completeSprintObj);
 			});
 
-		} // collectIssues
-	],
+			/*
+			collectSubtasks({
+				"authentication": authentication,
+				"sprintObj": wipSprintObj,
+				"callback": callback
+			});
+			*/
+		},
+		// CUSTOMIZE DATA OUTPUT HERE:
+		// Filter/Format the data. This is where you control what 
+		// you want to send to the UI layer.
+		function(completeSprintObj, callback) {
 
-	// Callback from async.series. resultsArray stores callback result from each task.
-	function outputData(err, resultsArray) {
-		// Thank you stackoverflow.com for a quick workaround for viewing objects with circular references: use util.inspect in Node.js.
-		//console.log("response: " + util.inspect(response));
+			var tableFriendlySprintObj = {};
 
-		//console.log("testFunction: " + testFunction().test);
+			// Adding another level named "sprint" makes the data calls in 
+			// the template look nicer.
+			tableFriendlySprintObj.sprint = {};
 
-		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
-		// Wrap the data in a global object... (mustache starts from an object then parses)
-		var data = {
-			"finalData": {"foo": "bar"}
-			//"finalData": resultsArray[0]
-		};
+			tableFriendlySprintObj.sprint.id = completeSprintObj.id;
+			tableFriendlySprintObj.sprint.total = completeSprintObj.total;
+			tableFriendlySprintObj.sprint.contributors = completeSprintObj.contributors;
 
-		sendToTemplate(response, "index.html", data);
+			var formattedIssues = [];
+			for (var i = 0; i < completeSprintObj.issues.length; i++) {
+				formattedIssues[i] = {};
+				formattedIssues[i].key = completeSprintObj.issues[i].key;
+				formattedIssues[i].summary = completeSprintObj.issues[i].fields.summary;
+				formattedIssues[i].type = completeSprintObj.issues[i].fields.issuetype.name;
+				formattedIssues[i].storyPoints = (formattedIssues[i].type === "Story" ? (completeSprintObj.issues[i].fields.customfield_10002 ? parseInt(completeSprintObj.issues[i].fields.customfield_10002) : "N/A") : "");
+				formattedIssues[i].status = completeSprintObj.issues[i].fields.status.name;
+				
+				formattedIssues[i].fixVersions = [];
+				for (var x = 0; x < completeSprintObj.issues[i].fields.fixVersions.length; x++) {
+					formattedIssues[i].fixVersions[x] = completeSprintObj.issues[i].fields.fixVersions[x].name;
+				}
 
-	}); // async.series
+				var formattedSubtasks = [];
+				formattedIssues[i].subtasks = [];
+				for (var j = 0; j < completeSprintObj.contributors.length; j++) {
+					formattedIssues[i].subtasks[j] = {};
+					formattedIssues[i].subtasks[j].name = completeSprintObj.contributors[j];
+					formattedIssues[i].subtasks[j].displayName = "COMING SOON!";
+
+					for (var k = 0; k < completeSprintObj.issues[i].fields.subtasks.length; k++) {
+						if (completeSprintObj.issues[i].fields.subtasks[k].subtask.fields.assignee.name === formattedIssues[i].subtasks[j].name) {
+							if (isNaN(formattedIssues[i].subtasks[j].remainingEstimateHours)) {
+								formattedIssues[i].subtasks[j].remainingEstimateHours = completeSprintObj.issues[i].fields.subtasks[k].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
+							} else {
+								// If contributor has multiple tasks, add them up.
+								formattedIssues[i].subtasks[j].remainingEstimateHours += completeSprintObj.issues[i].fields.subtasks[k].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
+							}
+						}
+					}
+				}
+			}
+
+			tableFriendlySprintObj.sprint.issues = formattedIssues;
+
+			callback(null, tableFriendlySprintObj);
+		}
+	],	// Render HTML...Finally!
+		function(err, tableFriendlySprintObj) {
+			console.log("Rendering HTML");
+			console.log(util.inspect(tableFriendlySprintObj, { showHidden: false, depth: null })); // infinite depth
+
+			sendToTemplate(response, "index.html", tableFriendlySprintObj);
+	});
 } // start
 
 
@@ -142,7 +250,7 @@ function error(response) {
 	response.write("<p>Please check your path again.</p>");
 
 	response.end();
-	
+
 } // error
 
 
