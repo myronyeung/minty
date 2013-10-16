@@ -242,20 +242,14 @@
 			<h2>Text View</h2>
 			{{#sprint.issues}}
 				<p>
-					{{type}} {{storyPoints}} {{key}} {{summary}} 
-					{{#fixVersions}}{{.}} {{/fixVersions}} {{status}}
+					{{type}}&#09;{{storyPoints}}&#09;{{key}}&#09;{{summary}}&#09;
+					{{#fixVersions}}{{.}}&#09;{{/fixVersions}}&#09;{{status}}&#09;
 					{{#subtasksForStickies}}
 						{{name}}: 
-						{{remainingEstimateHours}}h, 
+						{{remainingEstimateHours}}h,&#09; 
 					{{/subtasksForStickies}}
 				</p>
 			{{/sprint.issues}}
-
-
-			{{#sprint}}
-				<p>{{type}} {{key}} {{description}} {{release}} {{status}} 
-					{{#subtasks}}{{displayName}}: {{estimate}}{{^estimate}}TBD{{/estimate}} {{/subtasks}}</p>
-			{{/sprint}}
 		</section>
 	</div>
 
