@@ -7,7 +7,9 @@ var async = require("async"),
 /** 
  * Get authentication information from local file (not checked into GitHub).
  *
- * Source: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
+ * Reference:
+ * Why: http://ejohn.org/blog/keeping-passwords-in-source-control/
+ * How: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
  */
 authenticate  = function(callback) {
 
@@ -58,6 +60,31 @@ getCurrentSprint = function(request, callback) {
 /**
  * Get list of issues in current sprint.
  *
+ * Other paths that I explored and why they did not work:
+ *
+ * Not useful for me, because order of tickets with regard to its sprint not maintained. Plus it 
+ * appears to return tickets that do not belong in the sprint.
+ * path: "/rest/greenhopper/1.0/rapid/charts/sprintreport?rapidViewId=12&sprintId=26" 
+ *
+ * Not useful, because tickets are returned in descending ticket id's. Also returns tickets that 
+ * do not belong in the current sprint.
+ * path: "/rest/api/latest/search?jql=sprint%3D26&fields=key&maxResults=50" 
+ *
+ * This is the second best way, but it is hugely inefficient, because as of Sprint 15, it would return ~210 JIRA tickets.
+ * I then had to loop through each one to see if custom field customfield_10311 contained the string "Sprint 15". Yowza!
+ * path: "/rest/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=12",
+ *
+ * Best way:
+ *
+ * Just use JQL! With one call I can get all stories and bugs from a specific sprint and 
+ * ordered by rank (rank is how the tickets are hand-ordered in Greenhopper): 
+ * sprint = "Sprint 15" and (type = "story" or type = "bug") order by rank asc
+ * How to use within the JIRA web app: Go to JIRA > Issues > Search for Issues > Paste it into search box > Hit enter
+ * Here is the actual path: /rest/api/2/search?jql=sprint%20%3D%20%22Sprint%2015%22%20and
+ *		%20(type%20%3D%20%22story%22%20or%20type%20%3D%20%22bug%22)%20order%20by%20rank%20asc
+ *
+ * For reference, this call returns information about one ticket.
+ * path: "/rest/api/2/issue/JIRA-929"
  */
 getIssues = function(authentication, wipSprintObj, callback) {
 

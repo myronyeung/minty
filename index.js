@@ -14,11 +14,13 @@ var async = require("async"),
 // I only want to pass a single object to the callback, not an array of objects.
 // Reference: https://github.com/caolan/async#waterfall
 async.waterfall([
+
 	function(callback) {
 		// For performance reasons, this is only called when server starts up, 
 		// because the JIRA host name and user authentication should not change too often.
 		authenticate(callback);
 	}
+
 ],
 // Callback
 function(err, result) {

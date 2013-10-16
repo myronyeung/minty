@@ -2,6 +2,7 @@
 // requestHandlers.js holds the definitions for these functions.
 
 function route(handle, pathname, response, request, authentication) {
+
 	console.log("About to route a request for " + pathname);
 
 	if (typeof handle[pathname] === "function") {
@@ -10,6 +11,7 @@ function route(handle, pathname, response, request, authentication) {
 		// 404 Page.
 		handle["/error"](response, request);
 	}
+	
 }
 
 exports.route = route;

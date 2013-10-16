@@ -1,12 +1,4 @@
-var async = require("async"),
-	fs = require("fs"),
-	helpers = require("./helpers"),
-	https = require("https"),
-	mustache = require("mustache"),
-	querystring = require("querystring"),
-	url = require("url"),
-	util = require("util");
-
+var async = require("async");
 
 function start(response, request, authentication) {
 
@@ -37,10 +29,11 @@ function start(response, request, authentication) {
 		}
 
 	],	// Render HTML...Finally!
+		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
 		function(err, tableFriendlySprintObj) {
 
 			console.log("Rendering HTML");
-			console.log(util.inspect(tableFriendlySprintObj, { showHidden: false, depth: null })); // infinite depth
+			//console.log(util.inspect(tableFriendlySprintObj, { showHidden: false, depth: null })); // infinite depth
 
 			sendToTemplate(response, "index.html", tableFriendlySprintObj);
 
