@@ -35,7 +35,80 @@ parseURL = function(URL, parseQueryString) {
 
 	return (url.parse(URL, parseQueryString)).query;
 
-}
+} // parseURL
+
+
+/**
+ * Get current sprint from URL.
+ *
+ */
+getCurrentSprint = function(request, callback) {
+
+	var query = parseURL(request.url, true),
+		currentSprint = "Sprint " + query["sprint"],
+		wipSprintObj = {};
+
+	wipSprintObj.id = currentSprint;
+
+	callback(null, wipSprintObj);
+
+} // getCurrentSprint
+
+
+/**
+ * Get list of issues in current sprint.
+ *
+ */
+getIssues = function(authentication, wipSprintObj, callback) {
+
+	var currentSprint = wipSprintObj.id;
+
+	var sprintQuery = "/rest/api/2/search?jql=sprint%20%3D%20%22" + 
+		currentSprint.replace(/ /g, "%20") + // HACK to convert space to a HTML entity.
+		"%22%20and%20(type%20%3D%20%22story%22%20or%20type%20%3D%20%22bug%22)%20order%20by%20rank%20asc";
+
+	var options = {
+		host: authentication.jiraHost,
+		// Only url that returns tickets in the same order as in the sprints.
+		path: sprintQuery,
+		auth: authentication.myAuth
+	};
+
+	var req = https.request(options, function(res) {
+		//console.log("statusCode: ", res.statusCode);
+		//console.log("headers: ", res.headers);
+
+		var data = "";
+
+		res.on("data", function(chunk) {
+			data += chunk;
+			//process.stdout.write(json);
+		});
+
+		// Solution to SyntaxError: Unexpected end of input:
+		// Source: http://stackoverflow.com/questions/13212956/node-js-and-json-run-time-error
+		res.on("end", function buildEntireList() {
+
+			var sprintObjRaw = JSON.parse(data);
+
+			wipSprintObj.total = sprintObjRaw.total;
+			wipSprintObj.issues = sprintObjRaw.issues;
+
+			callback(null, wipSprintObj);
+
+			console.log("There are " + wipSprintObj.total + " issues in " + wipSprintObj.id);
+		});
+
+	}); // req = https.request
+
+	req.end();
+
+	req.on("error", function(err) {
+		console.error(err);
+		callback(err);
+	});
+
+} // getIssues
 
 
 /**
@@ -70,20 +143,18 @@ hitURL = function(options, index, func, callback) {
 
 
 /**
- * Collect subtasks in parallel
+ * Collect subtasks for each issue in parallel
  *
  * IMPORTANT LESSON: After a lot of hunting, I finally found an example of a dynamically created 
  * array of functions that is passed into async.parallel.
  *
  * Source: http://codereview.stackexchange.com/questions/6101/async-callbacks-and-closures-am-i-doing-it-right
  */
- collectSubtasks = function(params) {
+collectSubtasks = function(authentication, wipSprintObj, callback) {
 
-	var jiraHost = params.authentication.jiraHost,
-		myAuth = params.authentication.myAuth,
-		wipSprintObj = params.sprintObj,
-		callback = params.callback,
-		issues = sprintObj.issues,
+	var jiraHost = authentication.jiraHost,
+		myAuth = authentication.myAuth,
+		issues = wipSprintObj.issues,
 		queries = []; // this will be fed to async.parallel() later
 
 	// Factory function to create the queries.
@@ -115,7 +186,7 @@ hitURL = function(options, index, func, callback) {
 					wipSprintObj["contributors"].push(name);
 				}
 
-				callback();
+				callback(null, null);
 
 			}, callback);
 
@@ -141,89 +212,96 @@ hitURL = function(options, index, func, callback) {
 		}
 	}
 
-	// Run queries in parallel
-	async.parallel(queries, function finished() {
-		formatIssues(params);
-	});
+	async.parallel(queries, function(err, results) {
+		// Do not need results, which is an array of subtasks, because 
+		// I have already appended each subtask to its parent story in 
+		// wipSprintObj, which I "rename" to completeSprintObj. This "renaming"
+		// is redundant, but I want to make it very obvious that the
+		// object representing the sprint has finally reached its end state.
+		var completeSprintObj = wipSprintObj;
 
-	console.log("Done collecting tasks");
+		//console.log(util.inspect(completeSprintObj, { showHidden: false, depth: null })); // infinite depth
+
+		callback(null, completeSprintObj);
+	});
 
 } // collectSubtasks
 
 
 /**
- *
+ * Custom function to include and format only the exact bits of information
+ * I need to render my page.
  *
  */
-formatIssues = function(params) {
+formatForTable = function(completeSprintObj, callback) {
 
-	var callback = params.callback,
-		contributors = params.sprintObj.contributors,
-		issues = params.sprintObj.issues,
-		fields = "",
-		displayString = "";
+	var tableFriendlySprintObj = {};
 
-	for (var i = 0; i < issues.length; i++) {
-		var issue = issues[i],
-			formattedIssue = {};
+	// Adding another level named "sprint" makes the data calls in 
+	// the template look nicer.
+	tableFriendlySprintObj.sprint = {};
 
-		fields = issue.fields;
+	tableFriendlySprintObj.sprint.id = completeSprintObj.id;
+	tableFriendlySprintObj.sprint.total = completeSprintObj.total;
+	tableFriendlySprintObj.sprint.contributors = completeSprintObj.contributors;
 
-		formattedIssue["key"] = issue.key;
-		formattedIssue["type"] = fields.issuetype.name;
-		formattedIssue["summary"] = fields.summary;
-		formattedIssue["status"] = fields.status.name;
-		formattedIssue["release"] = (fields.fixVersions[0] && fields.fixVersions[0].name ? fields.fixVersions[0].name : "");
-		formattedIssue["storyPoints"] = (fields.issuetype.name === "Story" ? (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "N/A") : "");
+	var formattedIssues = [];
+	for (var i = 0; i < completeSprintObj.issues.length; i++) {
+		formattedIssues[i] = {};
+		formattedIssues[i].key = completeSprintObj.issues[i].key;
+		formattedIssues[i].summary = completeSprintObj.issues[i].fields.summary;
+		formattedIssues[i].type = completeSprintObj.issues[i].fields.issuetype.name;
+		formattedIssues[i].storyPoints = (formattedIssues[i].type === "Story" ? (completeSprintObj.issues[i].fields.customfield_10002 ? parseInt(completeSprintObj.issues[i].fields.customfield_10002) : "TBD") : "");
+		formattedIssues[i].status = completeSprintObj.issues[i].fields.status.name;
+		
+		formattedIssues[i].fixVersions = [];
+		for (var x = 0; x < completeSprintObj.issues[i].fields.fixVersions.length; x++) {
+			formattedIssues[i].fixVersions[x] = completeSprintObj.issues[i].fields.fixVersions[x].name;
+		}
 
-		// Add subtasks if story has them.
-		if (issue.subtasks) {
-			var subtasks = issue.subtasks,
-				numSubtasks = subtasks.length;
-			if (numSubtasks > 0) {
-				for (var subtaskIndex = 0; subtaskIndex < numSubtasks; subtaskIndex++) {
-					var name = subtasks[subtaskIndex].fields.assignee.name,
-						displayName = subtasks[subtaskIndex].fields.assignee.displayName,
-						remainingEstimateSeconds = subtasks[subtaskIndex].fields.timetracking.remainingEstimateSeconds;
+		// Subtasks for tables.
+		formattedIssues[i].subtasks = [];
+		for (var j = 0; j < completeSprintObj.contributors.length; j++) {
+			formattedIssues[i].subtasks[j] = {};
+			formattedIssues[i].subtasks[j].name = completeSprintObj.contributors[j];
+			formattedIssues[i].subtasks[j].displayName = "COMING SOON!";
 
-					if (formattedIssue[name]) {
-						// There is already one or more tasks for this story/bug assigned to this person, so add more time to this person.
-						formattedIssue[name] += (remainingEstimateSeconds / 3600);
+			for (var k = 0; k < completeSprintObj.issues[i].fields.subtasks.length; k++) {
+				if (completeSprintObj.issues[i].fields.subtasks[k].subtask.fields.assignee.name === formattedIssues[i].subtasks[j].name) {
+					if (isNaN(formattedIssues[i].subtasks[j].remainingEstimateHours)) {
+						formattedIssues[i].subtasks[j].remainingEstimateHours = completeSprintObj.issues[i].fields.subtasks[k].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
 					} else {
-						formattedIssue[name] = remainingEstimateSeconds / 3600;
+						// If contributor has multiple tasks, add them up.
+						formattedIssues[i].subtasks[j].remainingEstimateHours += completeSprintObj.issues[i].fields.subtasks[k].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
 					}
 				}
 			}
 		}
 
-		// HACK: Print subtasks for stickies.
-		if (issue.subtasks) {
-			var subtasks2 = issue.subtasks,
-				numSubtasks2 = subtasks2.length;
-			if (numSubtasks2 > 0) {
+		// Subtasks for stickies.
+		formattedIssues[i].subtasksForStickies = [];
 
-				formattedIssue["subtasks"] = [];
-				for (var subtaskIndex2 = 0; subtaskIndex2 < numSubtasks2; subtaskIndex2++) {
-					//console.log(subtasks2[subtaskIndex2]);
-					formattedIssue["subtasks"][subtaskIndex2] = {};
-					formattedIssue["subtasks"][subtaskIndex2]["displayName"] = subtasks2[subtaskIndex2].fields.assignee.displayName;
-					formattedIssue["subtasks"][subtaskIndex2]["estimate"] = subtasks2[subtaskIndex2].fields.timetracking.remainingEstimate;
+		for (var z = 0; z < completeSprintObj.issues[i].fields.subtasks.length; z++) {
+			formattedIssues[i].subtasksForStickies[z] = {};
+			if (completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.assignee.name) {
+				formattedIssues[i].subtasksForStickies[z].name = completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.assignee.name;
+				formattedIssues[i].subtasksForStickies[z].displayName = completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.assignee.displayName;
+				if (isNaN(formattedIssues[i].subtasksForStickies[z].remainingEstimateHours)) {
+					formattedIssues[i].subtasksForStickies[z].remainingEstimateHours = completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
+				} else {
+					// If contributor has multiple tasks, add them up.
+					formattedIssues[i].subtasksForStickies[z].remainingEstimateHours += completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
 				}
 			}
 		}
-
-		////
-		//;;params.rawCompleteOutput.push(formattedIssue);
-		////
 	}
 
-	console.log("Done! Number of stories in " + params.currentSprint + ": " + params.currentSprintCount);
+	tableFriendlySprintObj.sprint.issues = formattedIssues;
 
-	// This tells the app that it is done getting all the data and is ready to pass control 
-	// over to outputData() with formattedIssue as the "return" item.
-	callback(null, formattedIssue);
+	callback(null, tableFriendlySprintObj);
 
-} // formatIssues
+} // formatForTable
+
 
 sendToTemplate = function(response, template, data) {
 
@@ -240,7 +318,9 @@ sendToTemplate = function(response, template, data) {
 
 exports.authenticate = authenticate;
 exports.parseURL = parseURL;
+exports.getCurrentSprint = getCurrentSprint;
+exports.getIssues = getIssues;
 exports.hitURL = hitURL;
 exports.collectSubtasks = collectSubtasks;
-exports.formatIssues = formatIssues;
+exports.formatForTable = formatForTable;
 exports.sendToTemplate = sendToTemplate;

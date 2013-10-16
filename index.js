@@ -1,6 +1,6 @@
 // Lots of help reorganizing my server main, server, router, and request handler 
 // files came from The Node Beginner Book.
-// Source: http://www.nodebeginner.org/
+// Reference: http://www.nodebeginner.org/
 
 // index.js defines all the objects (which are functions) inside the handle object.
 
@@ -12,6 +12,7 @@ var async = require("async"),
 
 // In this case, async.waterfall makes more sense than async.series, because
 // I only want to pass a single object to the callback, not an array of objects.
+// Reference: https://github.com/caolan/async#waterfall
 async.waterfall([
 	function(callback) {
 		// For performance reasons, this is only called when server starts up, 
@@ -29,8 +30,6 @@ function(err, result) {
 	var handle = {};
 	handle["/"] = requestHandlers.start;
 	handle["/index.html"] = requestHandlers.start;
-	handle["/start"] = requestHandlers.start; // TODO: Remove
-	handle["/show"] = requestHandlers.show; // TODO: Remove
 	handle["/error"] = requestHandlers.error;
 
 	server.start(router.route, handle, authentication);
