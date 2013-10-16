@@ -184,7 +184,7 @@ function start(response, request, authentication) {
 					formattedIssues[i].fixVersions[x] = completeSprintObj.issues[i].fields.fixVersions[x].name;
 				}
 
-				var formattedSubtasks = [];
+				// Subtasks for tables.
 				formattedIssues[i].subtasks = [];
 				for (var j = 0; j < completeSprintObj.contributors.length; j++) {
 					formattedIssues[i].subtasks[j] = {};
@@ -199,6 +199,23 @@ function start(response, request, authentication) {
 								// If contributor has multiple tasks, add them up.
 								formattedIssues[i].subtasks[j].remainingEstimateHours += completeSprintObj.issues[i].fields.subtasks[k].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
 							}
+						}
+					}
+				}
+
+				// Subtasks for stickies.
+				formattedIssues[i].subtasksForStickies = [];
+
+				for (var z = 0; z < completeSprintObj.issues[i].fields.subtasks.length; z++) {
+					formattedIssues[i].subtasksForStickies[z] = {};
+					if (completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.assignee.name) {
+						formattedIssues[i].subtasksForStickies[z].name = completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.assignee.name;
+						formattedIssues[i].subtasksForStickies[z].displayName = completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.assignee.displayName;
+						if (isNaN(formattedIssues[i].subtasksForStickies[z].remainingEstimateHours)) {
+							formattedIssues[i].subtasksForStickies[z].remainingEstimateHours = completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
+						} else {
+							// If contributor has multiple tasks, add them up.
+							formattedIssues[i].subtasksForStickies[z].remainingEstimateHours += completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
 						}
 					}
 				}

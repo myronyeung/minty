@@ -215,25 +215,23 @@
 		</table>
 	</form>
 
-
 	{{#sprint.issues}}
-	<ul class="ticket {{fields.issuetype.name}}">
-		<li class="type">{{fields.issuetype.name}}</li>
+	<ul class="ticket {{type}}">
+		<li class="type">{{type}}</li>
 		<li class="id">{{key}}</li>
-		<li class="description">{{fields.summary}}</li>
-		{{#fields.customfield_10002}}<li class="points">{{fields.customfield_10002}}</li>{{/fields.customfield_10002}}
-		{{#fields.fixVersions}}<li class="release">{{name}}</li>{{/fields.fixVersions}}
+		<li class="description">{{summary}}</li>
+		{{#storyPoints}}<li class="points">{{storyPoints}}</li>{{/storyPoints}}
+		<li class="release">{{#fixVersions}}{{.}} {{/fixVersions}} &nbsp;</li>
 		<li>
 			<ul class="subtasks">
-				{{#fields.subtasks}}
+				{{#subtasksForStickies}}
 				<li class="subtask">
-					<span class="fn">{{subtask.fields.assignee.displayName}}</span>: 
+					<span class="fn">{{name}}</span>: 
 					<span class="estimate">
-						{{subtask.fields.timetracking.remainingEstimate}}
-						{{^subtask.fields.timetracking.remainingEstimate}}TBD{{/subtask.fields.timetracking.remainingEstimate}}
+						{{remainingEstimateHours}}h <!-- NaNh looks funny :-) -->
 					</span>
 				</li>
-				{{/fields.subtasks}}
+				{{/subtasksForStickies}}
 			</ul>
 		</li>
 	</ul>
@@ -244,13 +242,12 @@
 			<h2>Text View</h2>
 			{{#sprint.issues}}
 				<p>
-					{{fields.issuetype.name}} {{fields.customfield_10002}} {{key}} {{fields.summary}} 
-					{{#fields.fixVersions}}{{name}}{{/fields.fixVersions}} {{fields.status.name}} 
-					{{#fields.subtasks}}
-						{{subtask.fields.assignee.displayName}}: 
-						{{subtask.fields.timetracking.remainingEstimate}}
-						{{^subtask.fields.timetracking.remainingEstimate}}TBD{{/subtask.fields.timetracking.remainingEstimate}}
-					{{/fields.subtasks}}
+					{{type}} {{storyPoints}} {{key}} {{summary}} 
+					{{#fixVersions}}{{.}} {{/fixVersions}} {{status}}
+					{{#subtasksForStickies}}
+						{{name}}: 
+						{{remainingEstimateHours}}h, 
+					{{/subtasksForStickies}}
 				</p>
 			{{/sprint.issues}}
 
@@ -259,15 +256,6 @@
 				<p>{{type}} {{key}} {{description}} {{release}} {{status}} 
 					{{#subtasks}}{{displayName}}: {{estimate}}{{^estimate}}TBD{{/estimate}} {{/subtasks}}</p>
 			{{/sprint}}
-		</section>
-
-		<section>
-			<h2>Contributors</h2>
-			<ul>
-				{{#sprint.contributors}}
-				<li>{{.}}</li>
-				{{/sprint.contributors}}
-			</ul>
 		</section>
 	</div>
 
