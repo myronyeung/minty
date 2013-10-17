@@ -12,6 +12,7 @@
 	<style>
 		html {
 			font-size: 12px;
+			color: black;
 		}
 		body {
 			padding: 5px 20px;
@@ -41,6 +42,14 @@
 		}
 		td:nth-child(3) {
 			white-space: nowrap;	
+		}
+		table td a {
+			text-decoration: none;
+			color: black;
+		}
+		table td a:hover {
+			text-decoration: underline;
+			color: blue;
 		}
 		.totals {
 			text-align: right;
@@ -204,8 +213,8 @@
 				<tr>
 					<td>{{type}}</td>
 					<td>{{storyPoints}}</td>
-					<td>{{key}}</td>
-					<td>{{summary}}</td>
+					<td><a href="{{href}}" target="_blank">{{key}}</a></td>
+					<td><a href="{{href}}" target="_blank">{{summary}}</a></td>
 					<td>{{#fixVersions}}{{.}} {{/fixVersions}}</td>
 					<td>{{status}}</td>
 					{{#subtasks}}

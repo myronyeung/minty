@@ -102,6 +102,9 @@ getIssues = function(authentication, wipSprintObj, callback) {
 		auth: authentication.myAuth
 	};
 
+	// Use this host to construct anchor links for each ticket.
+	wipSprintObj.host = authentication.jiraHost;
+
 	var req = https.request(options, function(res) {
 		//console.log("statusCode: ", res.statusCode);
 		//console.log("headers: ", res.headers);
@@ -288,39 +291,43 @@ formatForTable = function(completeSprintObj, callback) {
 
 	var tableFriendlySprintObj = {},
 		formattedIssues = [];
+		formattedIssue = null;
 		issue = null,
 		fields = null,
 		subtask = null, // Caution: this is used in two different loops.
 		subtaskFields = null; // Caution: this is used in two different loops.
 
-	// Adding another level named "sprint" makes the data calls in 
+	// Adding another level named "sprint" makes the mustache data calls in 
 	// the template look nicer.
 	tableFriendlySprintObj.sprint = {};
 
+	// Add sprint metadata.
 	tableFriendlySprintObj.sprint.id = completeSprintObj.id;
 	tableFriendlySprintObj.sprint.total = completeSprintObj.total;
 	tableFriendlySprintObj.sprint.contributors = completeSprintObj.contributors;
 
+	// Examine issues.
 	for (var i = 0; i < completeSprintObj.issues.length; i++) {
 		issue = completeSprintObj.issues[i];
 		fields = issue.fields;
 
-		formattedIssues[i] = {};
-		formattedIssues[i].key = issue.key;
-		formattedIssues[i].summary = fields.summary;
-		formattedIssues[i].type = fields.issuetype.name;
-		formattedIssues[i].storyPoints = (formattedIssues[i].type === "Story" ? (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "TBD") : "");
-		formattedIssues[i].status = fields.status.name;
+		formattedIssue = formattedIssues[i] = {};
+		formattedIssue.key = issue.key;
+		formattedIssue.summary = fields.summary;
+		formattedIssue.type = fields.issuetype.name;
+		formattedIssue.storyPoints = (formattedIssue.type === "Story" ? (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "TBD") : "");
+		formattedIssue.status = fields.status.name;
+		formattedIssue.href = "https://" + completeSprintObj.host + "/browse/" + issue.key;
 		
-		formattedIssues[i].fixVersions = [];
+		formattedIssue.fixVersions = [];
 		for (var x = 0; x < fields.fixVersions.length; x++) {
-			formattedIssues[i].fixVersions[x] = fields.fixVersions[x].name;
+			formattedIssue.fixVersions[x] = fields.fixVersions[x].name;
 		}
 
 		// Subtasks for tables.
-		formattedIssues[i].subtasks = [];
+		formattedIssue.subtasks = [];
 		for (var j = 0; j < completeSprintObj.contributors.length; j++) {
-			subtask = formattedIssues[i].subtasks[j] = {};
+			subtask = formattedIssue.subtasks[j] = {};
 			subtask.name = completeSprintObj.contributors[j];
 			subtask.displayName = "COMING SOON!";
 
@@ -338,10 +345,10 @@ formatForTable = function(completeSprintObj, callback) {
 		}
 
 		// Subtasks for stickies.
-		formattedIssues[i].subtasksForStickies = [];
+		formattedIssue.subtasksForStickies = [];
 
 		for (var z = 0; z < fields.subtasks.length; z++) {
-			subtask = formattedIssues[i].subtasksForStickies[z] = {};
+			subtask = formattedIssue.subtasksForStickies[z] = {};
 			subtaskFields = fields.subtasks[z].subtask.fields;
 			if (subtaskFields.assignee.name) {
 
