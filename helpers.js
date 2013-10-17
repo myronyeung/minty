@@ -262,7 +262,12 @@ collectSubtasks = function(authentication, wipSprintObj, callback) {
  */
 formatForTable = function(completeSprintObj, callback) {
 
-	var tableFriendlySprintObj = {};
+	var tableFriendlySprintObj = {},
+		formattedIssues = [];
+		issue = null,
+		fields = null,
+		subtask = null, // Caution: this is used in two different loops.
+		subtaskFields = null; // Caution: this is used in two different loops.
 
 	// Adding another level named "sprint" makes the data calls in 
 	// the template look nicer.
@@ -272,34 +277,37 @@ formatForTable = function(completeSprintObj, callback) {
 	tableFriendlySprintObj.sprint.total = completeSprintObj.total;
 	tableFriendlySprintObj.sprint.contributors = completeSprintObj.contributors;
 
-	var formattedIssues = [];
 	for (var i = 0; i < completeSprintObj.issues.length; i++) {
+		issue = completeSprintObj.issues[i];
+		fields = issue.fields;
+
 		formattedIssues[i] = {};
-		formattedIssues[i].key = completeSprintObj.issues[i].key;
-		formattedIssues[i].summary = completeSprintObj.issues[i].fields.summary;
-		formattedIssues[i].type = completeSprintObj.issues[i].fields.issuetype.name;
-		formattedIssues[i].storyPoints = (formattedIssues[i].type === "Story" ? (completeSprintObj.issues[i].fields.customfield_10002 ? parseInt(completeSprintObj.issues[i].fields.customfield_10002) : "TBD") : "");
-		formattedIssues[i].status = completeSprintObj.issues[i].fields.status.name;
+		formattedIssues[i].key = issue.key;
+		formattedIssues[i].summary = fields.summary;
+		formattedIssues[i].type = fields.issuetype.name;
+		formattedIssues[i].storyPoints = (formattedIssues[i].type === "Story" ? (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "TBD") : "");
+		formattedIssues[i].status = fields.status.name;
 		
 		formattedIssues[i].fixVersions = [];
-		for (var x = 0; x < completeSprintObj.issues[i].fields.fixVersions.length; x++) {
-			formattedIssues[i].fixVersions[x] = completeSprintObj.issues[i].fields.fixVersions[x].name;
+		for (var x = 0; x < fields.fixVersions.length; x++) {
+			formattedIssues[i].fixVersions[x] = fields.fixVersions[x].name;
 		}
 
 		// Subtasks for tables.
 		formattedIssues[i].subtasks = [];
 		for (var j = 0; j < completeSprintObj.contributors.length; j++) {
-			formattedIssues[i].subtasks[j] = {};
-			formattedIssues[i].subtasks[j].name = completeSprintObj.contributors[j];
-			formattedIssues[i].subtasks[j].displayName = "COMING SOON!";
+			subtask = formattedIssues[i].subtasks[j] = {};
+			subtask.name = completeSprintObj.contributors[j];
+			subtask.displayName = "COMING SOON!";
 
-			for (var k = 0; k < completeSprintObj.issues[i].fields.subtasks.length; k++) {
-				if (completeSprintObj.issues[i].fields.subtasks[k].subtask.fields.assignee.name === formattedIssues[i].subtasks[j].name) {
-					if (isNaN(formattedIssues[i].subtasks[j].remainingEstimateHours)) {
-						formattedIssues[i].subtasks[j].remainingEstimateHours = completeSprintObj.issues[i].fields.subtasks[k].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
+			for (var k = 0; k < fields.subtasks.length; k++) {
+				subtaskFields = fields.subtasks[k].subtask.fields;
+				if (subtaskFields.assignee.name === subtask.name) {
+					if (isNaN(subtask.remainingEstimateHours)) {
+						subtask.remainingEstimateHours = subtaskFields.timetracking.remainingEstimateSeconds / 3600;
 					} else {
 						// If contributor has multiple tasks, add them up.
-						formattedIssues[i].subtasks[j].remainingEstimateHours += completeSprintObj.issues[i].fields.subtasks[k].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
+						subtask.remainingEstimateHours += subtaskFields.timetracking.remainingEstimateSeconds / 3600;
 					}
 				}
 			}
@@ -308,16 +316,18 @@ formatForTable = function(completeSprintObj, callback) {
 		// Subtasks for stickies.
 		formattedIssues[i].subtasksForStickies = [];
 
-		for (var z = 0; z < completeSprintObj.issues[i].fields.subtasks.length; z++) {
-			formattedIssues[i].subtasksForStickies[z] = {};
-			if (completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.assignee.name) {
-				formattedIssues[i].subtasksForStickies[z].name = completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.assignee.name;
-				formattedIssues[i].subtasksForStickies[z].displayName = completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.assignee.displayName;
-				if (isNaN(formattedIssues[i].subtasksForStickies[z].remainingEstimateHours)) {
-					formattedIssues[i].subtasksForStickies[z].remainingEstimateHours = completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
+		for (var z = 0; z < fields.subtasks.length; z++) {
+			subtask = formattedIssues[i].subtasksForStickies[z] = {};
+			subtaskFields = fields.subtasks[z].subtask.fields;
+			if (subtaskFields.assignee.name) {
+
+				subtask.name = subtaskFields.assignee.name;
+				subtask.displayName = subtaskFields.assignee.displayName;
+				if (isNaN(subtask.remainingEstimateHours)) {
+					subtask.remainingEstimateHours = subtaskFields.timetracking.remainingEstimateSeconds / 3600;
 				} else {
 					// If contributor has multiple tasks, add them up.
-					formattedIssues[i].subtasksForStickies[z].remainingEstimateHours += completeSprintObj.issues[i].fields.subtasks[z].subtask.fields.timetracking.remainingEstimateSeconds / 3600;
+					subtask.remainingEstimateHours += subtaskFields.timetracking.remainingEstimateSeconds / 3600;
 				}
 			}
 		}
@@ -342,6 +352,7 @@ sendToTemplate = function(response, template, data) {
 	response.end();
 
 } // sendToTemplate
+
 
 exports.authenticate = authenticate;
 exports.parseURL = parseURL;
