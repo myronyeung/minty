@@ -2,7 +2,8 @@ var async = require("async"),
 	fs = require("fs"),
 	https = require("https"),
 	mustache = require("mustache"),
-	url = require("url");
+	url = require("url"),
+	util = require("util");
 
 /** 
  * Get authentication information from local file (not checked into GitHub).
@@ -247,12 +248,35 @@ collectSubtasks = function(authentication, wipSprintObj, callback) {
 		// object representing the sprint has finally reached its end state.
 		var completeSprintObj = wipSprintObj;
 
-		//console.log(util.inspect(completeSprintObj, { showHidden: false, depth: null })); // infinite depth
+		// DEBUG the complete gigantic JSON representation of the sprint.
+		printToConsole("BEGIN Complete JSON Representation of Sprint", "END Complete JSON Representation of Sprint", completeSprintObj);
 
 		callback(null, completeSprintObj);
 	});
 
 } // collectSubtasks
+
+
+/**
+ * Simple debugging tool
+ */
+printToConsole = function(beginMsg, endMsg, obj) {
+	console.log("\n\n\n");
+	console.log("######################################################################");
+	console.log("#");
+	console.log("# " + beginMsg);
+	console.log("#");
+	console.log("######################################################################");
+	console.log("\n");
+	console.log(util.inspect(obj, { showHidden: false, depth: null })); // infinite depth.
+	console.log("\n");
+	console.log("######################################################################");
+	console.log("#");
+	console.log("# " + endMsg);
+	console.log("#");
+	console.log("######################################################################");
+	console.log("\n\n\n");
+}
 
 
 /**
@@ -334,6 +358,9 @@ formatForTable = function(completeSprintObj, callback) {
 	}
 
 	tableFriendlySprintObj.sprint.issues = formattedIssues;
+
+	// DEBUG this trimmed down JSON representation of the sprint.
+	printToConsole("BEGIN tableFriendlySprintObj", "END tableFriendlySprintObj", tableFriendlySprintObj);
 
 	callback(null, tableFriendlySprintObj);
 
