@@ -64,6 +64,9 @@
 		.clearBoth {
 			clear: both;
 		}
+		.accessAid {
+			display: none;
+		}
 
 
 		/*
@@ -172,6 +175,7 @@
 
 	<p>FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API. I will deal with this later.</p>
 
+	<h2>Table View</h2>
 	<form class="screen">
 		<table>
 			<thead>
@@ -230,6 +234,7 @@
 		</table>
 	</form>
 
+	<h2>Stickies View</h2>
 	{{#sprint.issues}}
 	<ul class="ticket {{type}}">
 		<li class="type">{{type}}</li>
