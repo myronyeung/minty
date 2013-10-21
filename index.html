@@ -61,6 +61,10 @@
 			font-size: 1.5rem;
 			font-weight: bold;
 		}
+		.textView p {
+			margin-top: 0;
+			margin-bottom: 0;
+		}
 		.clearBoth {
 			clear: both;
 		}
@@ -99,18 +103,18 @@
 				/* Light magenta */
 				background-color: rgba(255, 0, 255, 0.3);
 			}
-			.type {
+			.ticket .type {
 				margin-bottom: 5px;
 			}
-			.id {
+			.ticket .id {
 				font-size: 1.5rem;
 				margin-bottom: 10px;
 			}
-			.description {
+			.ticket .description {
 				font-size: 1.5rem;
 				font-weight: bold;
 			}
-			.points {
+			.ticket .points {
 				position: absolute;
 				box-sizing: border-box;
 				top: .15in;
@@ -124,7 +128,7 @@
 				text-align: center;
 				line-height: .4in;
 			}
-			.release {
+			.ticket .release {
 				position: absolute;
 				box-sizing: border-box;
 				bottom: .15in;
@@ -135,14 +139,14 @@
 				text-align: center;
 				line-height: .3in;
 			}
-			.subtasks {
+			.ticket .subtasks {
 				position: absolute;
 				box-sizing: border-box;
 				bottom: .15in;
 				right: .15in;
 				list-style-type: none;
 			}
-			.subtask {
+			.ticket .subtask {
 				font-size: 0.8rem;
 				text-align: right;
 			}
@@ -171,11 +175,11 @@
 <body>
 	<h1 class="screen">Minty: Resource Planning Extension For GreenHopper</h1>
 
-	<h2>{{sprint.id}} has {{sprint.total}} items</h2>
+	<h2 class="screen">{{sprint.id}} has {{sprint.total}} items</h2>
 
-	<p>FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API. I will deal with this later.</p>
+	<p class="screen">FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API. I will deal with this later.</p>
 
-	<h2>Table View</h2>
+	<h2 class="screen">Table View</h2>
 	<form class="screen">
 		<table>
 			<thead>
@@ -234,7 +238,7 @@
 		</table>
 	</form>
 
-	<h2>Stickies View</h2>
+	<h2 class="screen">Stickies View</h2>
 	{{#sprint.issues}}
 	<ul class="ticket {{type}}">
 		<li class="type">{{type}}</li>
@@ -257,17 +261,17 @@
 	</ul>
 	{{/sprint.issues}}
 
-	<div class="hidden clearBoth">
-		<section>
+	<div class="hidden clearBoth screen">
+		<section class="textView">
 			<h2>Text View</h2>
 			{{#sprint.issues}}
-				<p>
-					{{type}}&#09;{{storyPoints}}&#09;{{key}}&#09;{{summary}}&#09;
-					{{#fixVersions}}{{.}}&#09;{{/fixVersions}}&#09;{{status}}&#09;
-					{{#subtasksForStickies}}
+				<p><span class="type">{{type}}&#09;</span><span class="storyPoints">{{storyPoints}}&#09;</span>
+					<span class="key">{{key}}&#09;</span><span class="summary">{{summary}}&#09;</span>
+					<span class="fixVersions">{{#fixVersions}}{{.}}&#09;{{/fixVersions}}&#09;</span><span class="status">{{status}}&#09;</span>
+					<span class="subtasks">{{#subtasksForStickies}}
 						{{name}}: 
 						{{remainingEstimateHours}}h,&#09; 
-					{{/subtasksForStickies}}
+					{{/subtasksForStickies}}</span>
 				</p>
 			{{/sprint.issues}}
 		</section>
