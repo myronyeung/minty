@@ -23,6 +23,10 @@
 		h1 {
 			margin: 0;
 		}
+		section {
+			margin-top: 30px;
+			border-top: 1px solid black;
+		}
 		table {
 			width: 100%;
 		}
@@ -61,10 +65,22 @@
 			font-size: 1.5rem;
 			font-weight: bold;
 		}
+		.textView form {
+			margin: 20px 0;
+			border: 1px solid black;
+			padding: 10px;
+		}
 		.textView p {
 			margin-top: 0;
 			margin-bottom: 0;
 		}
+
+		/* Temporary hack to hide extraneous info */
+		.textView .storyPoints, .textView .fixVersions, 
+		.textView .status, .textView .subtasks {
+			display: none;
+		}
+		
 		.clearBoth {
 			clear: both;
 		}
@@ -173,109 +189,125 @@
 
 </head>
 <body>
-	<h1 class="screen">Minty: Resource Planning Extension For GreenHopper</h1>
+	<header class="screen">
+		<h1>Minty: Resource Planning Extension For GreenHopper</h1>
 
-	<h2 class="screen">{{sprint.id}} has {{sprint.total}} items</h2>
+		<h2>{{sprint.id}} has {{sprint.total}} items</h2>
 
-	<p class="screen">FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API. I will deal with this later.</p>
+		<p>FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API. I will deal with this later.</p>
+	</header>
 
-	<h2 class="screen">Table View</h2>
-	<form class="screen">
-		<table>
-			<thead>
-				<tr>
-					<th>Type</th>
-					<th>Story Points</th>
-					<th>Key</th>
-					<th>Description</th>
-					<th>Release</th>
-					<th>Status</th>
-					{{#sprint.contributors}}
-					<th class="fn">{{.}}</th>
-					{{/sprint.contributors}}
-					<th></th>
-				</tr>
-				<tr>
-					<th class="totals" colspan="6">Remaining hours</th>
-					{{#sprint.contributors}}
-					<th class="{{.}} total">{{.}}</th>
-					{{/sprint.contributors}}
-					<th></th>
-				</tr>
-			</thead>
-			<tfoot>
-				<tr>
-					<th colspan="6"></th>
-					{{#sprint.contributors}}
-					<th class="fn">{{.}}</th>
-					{{/sprint.contributors}}
-					<th></th>
-				</tr>
-				<tr>
-					<th class="totals" colspan="6">Remaining hours</th>
-					{{#sprint.contributors}}
-					<th class="{{.}} total">{{.}}</th>
-					{{/sprint.contributors}}
-					<th></th>
-				</tr>
-			</tfoot>
-			<tbody>
-				{{#sprint.issues}}
-				<tr>
-					<td>{{type}}</td>
-					<td>{{storyPoints}}</td>
-					<td><a href="{{href}}" target="_blank">{{key}}</a></td>
-					<td><a href="{{href}}" target="_blank">{{summary}}</a></td>
-					<td>{{#fixVersions}}{{.}} {{/fixVersions}}</td>
-					<td>{{status}}</td>
-					{{#subtasks}}
-					<td class="{{name}} task">{{remainingEstimateHours}}</td>
-					{{/subtasks}}
-					<td><input type="checkbox" name="" checked="checked"/></td>
-				</tr>
-				{{/sprint.issues}}
-			</tbody>
-		</table>
-	</form>
+	<section class="tableView screen">
+		<h2>Table View</h2>
+		<form id="tableViewForm">
+			<table>
+				<thead>
+					<tr>
+						<th>Type</th>
+						<th>Story Points</th>
+						<th>Key</th>
+						<th>Description</th>
+						<th>Release</th>
+						<th>Status</th>
+						{{#sprint.contributors}}
+						<th class="fn">{{.}}</th>
+						{{/sprint.contributors}}
+						<th></th>
+					</tr>
+					<tr>
+						<th class="totals" colspan="6">Remaining hours</th>
+						{{#sprint.contributors}}
+						<th class="{{.}} total">{{.}}</th>
+						{{/sprint.contributors}}
+						<th></th>
+					</tr>
+				</thead>
+				<tfoot>
+					<tr>
+						<th colspan="6"></th>
+						{{#sprint.contributors}}
+						<th class="fn">{{.}}</th>
+						{{/sprint.contributors}}
+						<th></th>
+					</tr>
+					<tr>
+						<th class="totals" colspan="6">Remaining hours</th>
+						{{#sprint.contributors}}
+						<th class="{{.}} total">{{.}}</th>
+						{{/sprint.contributors}}
+						<th></th>
+					</tr>
+				</tfoot>
+				<tbody>
+					{{#sprint.issues}}
+					<tr>
+						<td>{{type}}</td>
+						<td>{{storyPoints}}</td>
+						<td><a href="{{href}}" target="_blank">{{key}}</a></td>
+						<td><a href="{{href}}" target="_blank">{{summary}}</a></td>
+						<td>{{#fixVersions}}{{.}} {{/fixVersions}}</td>
+						<td>{{status}}</td>
+						{{#subtasks}}
+						<td class="{{name}} task">{{remainingEstimateHours}}</td>
+						{{/subtasks}}
+						<td><input type="checkbox" name="" checked="checked"/></td>
+					</tr>
+					{{/sprint.issues}}
+				</tbody>
+			</table>
+		</form>
+	</section>
 
-	<h2 class="screen">Stickies View</h2>
-	{{#sprint.issues}}
-	<ul class="ticket {{type}}">
-		<li class="type">{{type}}</li>
-		<li class="id">{{key}}</li>
-		<li class="description">{{summary}}</li>
-		{{#storyPoints}}<li class="points">{{storyPoints}}</li>{{/storyPoints}}
-		<li class="release">{{#fixVersions}}{{.}} {{/fixVersions}} &nbsp;</li>
-		<li>
-			<ul class="subtasks">
-				{{#subtasksForStickies}}
-				<li class="subtask">
-					<span class="fn">{{name}}</span>: 
-					<span class="estimate">
-						{{remainingEstimateHours}}h <!-- NaNh looks funny :-) -->
-					</span>
-				</li>
-				{{/subtasksForStickies}}
-			</ul>
-		</li>
-	</ul>
-	{{/sprint.issues}}
+	<section class="stickiesView">
+		<h2 class="screen">Stickies View</h2>
+		{{#sprint.issues}}
+		<ul class="ticket {{type}}">
+			<li class="type">{{type}}</li>
+			<li class="id">{{key}}</li>
+			<li class="description">{{summary}}</li>
+			{{#storyPoints}}<li class="points">{{storyPoints}}</li>{{/storyPoints}}
+			<li class="release">{{#fixVersions}}{{.}} {{/fixVersions}} &nbsp;</li>
+			<li>
+				<ul class="subtasks">
+					{{#subtasksForStickies}}
+					<li class="subtask">
+						<span class="fn">{{name}}</span>: 
+						<span class="estimate">
+							{{remainingEstimateHours}}h <!-- NaNh looks funny :-) -->
+						</span>
+					</li>
+					{{/subtasksForStickies}}
+				</ul>
+			</li>
+		</ul>
+		{{/sprint.issues}}
+	</section>
 
-	<div class="hidden clearBoth screen">
-		<section class="textView">
-			<h2>Text View</h2>
-			{{#sprint.issues}}
-				<p><span class="type">{{type}}&#09;</span><span class="storyPoints">{{storyPoints}}&#09;</span>
-					<span class="key">{{key}}&#09;</span><span class="summary">{{summary}}&#09;</span>
-					<span class="fixVersions">{{#fixVersions}}{{.}}&#09;{{/fixVersions}}&#09;</span><span class="status">{{status}}&#09;</span>
-					<span class="subtasks">{{#subtasksForStickies}}
-						{{name}}: 
-						{{remainingEstimateHours}}h,&#09; 
-					{{/subtasksForStickies}}</span>
-				</p>
-			{{/sprint.issues}}
-		</section>
-	</div>
+	<section class="textView hidden clearBoth screen">
+		<h2>Text View</h2>
+
+		<form id="tableViewForm">
+			<legend>Display these fields: </legend>
+			<label>Type<input type="checkbox" name="textViewFieldToggle" value="checked" checked="checked" /></label>
+			<label>Story Points<input type="checkbox" name="textViewFieldToggle" value="checked" /></label>
+			<label>Key<input type="checkbox" name="textViewFieldToggle" value="checked" checked="checked" /></label>
+			<label>Summary<input type="checkbox" name="textViewFieldToggle" value="checked" checked="checked" /></label>
+			<label>Release(s)<input type="checkbox" name="textViewFieldToggle" value="checked" checked="checked" /></label>
+			<label>Status<input type="checkbox" name="textViewFieldToggle" value="checked" /></label>
+			<label>Subtask(s)<input type="checkbox" name="textViewFieldToggle" value="subtasks" /></label>
+		</form>
+
+		{{#sprint.issues}}
+			<p><span class="type">{{type}}&#09;</span><span class="storyPoints">{{storyPoints}}&#09;</span>
+				<span class="key">{{key}}&#09;</span><span class="summary">{{summary}}&#09;</span>
+				<span class="fixVersions">{{#fixVersions}}{{.}}&#09;{{/fixVersions}}&#09;</span><span class="status">{{status}}&#09;</span>
+				<span class="subtasks">{{#subtasksForStickies}}
+					{{name}}: 
+					{{remainingEstimateHours}}h,&#09; 
+				{{/subtasksForStickies}}</span>
+			</p>
+		{{/sprint.issues}}
+	</section>
 
 	<script>
 		document.addEventListener("DOMContentLoaded", function init (event) {
@@ -334,11 +366,13 @@
 		}
 
 		function initializeEvents() {
-			var form = document.querySelector("form");
-			form.addEventListener("click", initCheckboxes, false);
+			var tableViewForm = document.querySelector("#tableViewForm"),
+				textViewForm = document.querySelector("#tableViewForm");
+
+			tableForm.addEventListener("click", initTableFormCheckboxes, false);
 		}
 
-		function initCheckboxes(event) {
+		function initTableFormCheckboxes(event) {
 			var element = event.srcElement;
 			if (element.getAttribute("type") === "checkbox") {
 				if (element.checked) {
