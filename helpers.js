@@ -351,7 +351,9 @@ formatForTable = function(completeSprintObj, callback) {
 
 } // formatForTable
 
-
+/**
+ * Marry data with template and send it to the client.
+ */
 sendToTemplate = function(response, template, data) {
 
 	var page = fs.readFileSync(template, "utf8"), // bring in the HTML file
