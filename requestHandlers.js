@@ -1,44 +1,12 @@
 var async = require("async");
 
-function start(response, request, authentication) {
+function displayAll(response, request, authentication) {
 
-	console.log("Request handler 'start' was called.");
+	console.log("Request handler 'displayAll' was called.");
 
-	// Much easier to build out the async.waterfall skeleton first, 
-	// and ensuring callbacks are in the right places.
-	// Reference: https://github.com/caolan/async#waterfall
-	async.waterfall([
+	display(response, request, authentication, "index.html");
 
-		function(callback) {
-			getCurrentSprint(request, callback);
-		},
-		
-		function(wipSprintObj, callback) {
-			getIssues(authentication, wipSprintObj, callback);
-		},
-
-		function(wipSprintObj, callback) {
-			collectSubtasks(authentication, wipSprintObj, callback);
-		},
-
-		// CUSTOMIZE DATA OUTPUT HERE:
-		// Filter/Format the data. This is where you control what 
-		// you want to send to the UI layer.
-		function(completeSprintObj, callback) {
-			formatForTable(completeSprintObj, callback);
-		}
-
-	],	// Render HTML...Finally!
-		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
-		function(err, tableFriendlySprintObj) {
-
-			console.log("Rendering HTML");
-			//console.log(util.inspect(tableFriendlySprintObj, { showHidden: false, depth: null })); // infinite depth
-
-			sendToTemplate(response, "index.html", tableFriendlySprintObj);
-
-	});
-} // start
+} // displayAll
 
 
 function error(response) {
@@ -55,5 +23,6 @@ function error(response) {
 } // error
 
 
-exports.start = start;
+//exports.start = start;
+exports.displayAll = displayAll;
 exports.error = error;

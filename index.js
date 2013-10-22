@@ -30,8 +30,8 @@ function(err, result) {
 	console.log("Authentication.jiraHost: " + authentication.jiraHost);
 
 	var handle = {};
-	handle["/"] = requestHandlers.start;
-	handle["/index.html"] = requestHandlers.start;
+	handle["/"] = requestHandlers.displayAll;
+	handle["/index.html"] = requestHandlers.displayAll;
 	handle["/error"] = requestHandlers.error;
 
 	server.start(router.route, handle, authentication);

@@ -261,28 +261,6 @@ collectSubtasks = function(authentication, wipSprintObj, callback) {
 
 
 /**
- * Simple debugging tool
- */
-printToConsole = function(beginMsg, endMsg, obj) {
-	console.log("\n\n\n");
-	console.log("######################################################################");
-	console.log("#");
-	console.log("# " + beginMsg);
-	console.log("#");
-	console.log("######################################################################");
-	console.log("\n");
-	console.log(util.inspect(obj, { showHidden: false, depth: null })); // infinite depth.
-	console.log("\n");
-	console.log("######################################################################");
-	console.log("#");
-	console.log("# " + endMsg);
-	console.log("#");
-	console.log("######################################################################");
-	console.log("\n\n\n");
-}
-
-
-/**
  * Custom function to include and format only the exact bits of information
  * I need to render my page.
  *
@@ -388,6 +366,69 @@ sendToTemplate = function(response, template, data) {
 } // sendToTemplate
 
 
+/**
+ * Simple debugging tool
+ */
+printToConsole = function(beginMsg, endMsg, obj) {
+	console.log("\n\n\n");
+	console.log("######################################################################");
+	console.log("#");
+	console.log("# " + beginMsg);
+	console.log("#");
+	console.log("######################################################################");
+	console.log("\n");
+	console.log(util.inspect(obj, { showHidden: false, depth: null })); // infinite depth.
+	console.log("\n");
+	console.log("######################################################################");
+	console.log("#");
+	console.log("# " + endMsg);
+	console.log("#");
+	console.log("######################################################################");
+	console.log("\n\n\n");
+}
+
+
+/**
+ * 
+ */
+display = function(response, request, authentication, template) {
+	// Much easier to build out the async.waterfall skeleton first, 
+	// and ensuring callbacks are in the right places.
+	// Reference: https://github.com/caolan/async#waterfall
+	async.waterfall([
+
+		function(callback) {
+			getCurrentSprint(request, callback);
+		},
+		
+		function(wipSprintObj, callback) {
+			getIssues(authentication, wipSprintObj, callback);
+		},
+
+		function(wipSprintObj, callback) {
+			collectSubtasks(authentication, wipSprintObj, callback);
+		},
+
+		// CUSTOMIZE DATA OUTPUT HERE:
+		// Filter/Format the data. This is where you control what 
+		// you want to send to the UI layer.
+		function(completeSprintObj, callback) {
+			formatForTable(completeSprintObj, callback);
+		}
+
+	],	// Render HTML...Finally!
+		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
+		function(err, tableFriendlySprintObj) {
+
+			console.log("Rendering HTML");
+			//console.log(util.inspect(tableFriendlySprintObj, { showHidden: false, depth: null })); // infinite depth
+
+			sendToTemplate(response, template, tableFriendlySprintObj);
+
+	});
+}
+
+
 exports.authenticate = authenticate;
 exports.parseURL = parseURL;
 exports.getCurrentSprint = getCurrentSprint;
@@ -396,3 +437,5 @@ exports.hitURL = hitURL;
 exports.collectSubtasks = collectSubtasks;
 exports.formatForTable = formatForTable;
 exports.sendToTemplate = sendToTemplate;
+exports.printToConsole = printToConsole;
+exports.display = display;
