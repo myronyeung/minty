@@ -207,6 +207,18 @@
 		<h2>Table View</h2>
 		<form id="tableViewForm">
 			<table>
+				<colgroup>
+					<col />
+					<col />
+					<col />
+					<col />
+					<col />
+					<col />
+					{{#sprint.contributors}}
+					<col />
+					{{/sprint.contributors}}
+					<col />
+				</colgroup>
 				<thead>
 					<tr>
 						<th>Type</th>
