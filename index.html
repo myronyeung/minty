@@ -69,7 +69,7 @@
 			text-decoration: line-through;
 		}
 		table .In.Progress {
-			background-color: yellow;
+			background-color: #FFFF99;
 		}
 		.textView form {
 			margin: 20px 0;
@@ -254,7 +254,7 @@
 						<td>{{#fixVersions}}{{.}} {{/fixVersions}}</td>
 						<td>{{status}}</td>
 						{{#subtasks}}
-						<td class="{{name}} task">{{remainingEstimateHours}}</td>
+						<td class="task {{name}} {{subtaskStatus}}">{{remainingEstimateHours}}</td>
 						{{/subtasks}}
 						<td><input type="checkbox" name="" checked="checked"/></td>
 					</tr>

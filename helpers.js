@@ -318,6 +318,12 @@ formatForTable = function(completeSprintObj, callback) {
 						// If contributor has multiple tasks, add them up.
 						subtask.remainingEstimateHours += subtaskFields.timetracking.remainingEstimateSeconds / 3600;
 					}
+					// Output status for anyone who is assigned a subtask. Use case: Resolved or Closed statuses are styled differently.
+					if (subtaskFields.timetracking.originalEstimateSeconds > 0) {
+						// Mustache.js bug? If I have a parent with a child object, and they both have identically named keys, e.g. "status".
+						// If the child.status does not exist, it prints parent.status. My hack was to rename subtask.status to subtask.subtaskStatus.
+						subtask.subtaskStatus = subtaskFields.status.name; 
+					}
 				}
 			}
 		}
