@@ -65,6 +65,12 @@
 			font-size: 1.5rem;
 			font-weight: bold;
 		}
+		table .Resolved, table .Closed {
+			text-decoration: line-through;
+		}
+		table .In.Progress {
+			background-color: yellow;
+		}
 		.textView form {
 			margin: 20px 0;
 			border: 1px solid black;
@@ -240,7 +246,7 @@
 				</tfoot>
 				<tbody>
 					{{#sprint.issues}}
-					<tr>
+					<tr class="{{status}}">
 						<td>{{type}}</td>
 						<td>{{storyPoints}}</td>
 						<td><a href="{{href}}" target="_blank">{{key}}</a></td>
@@ -336,11 +342,11 @@
 				eTotal = null,
 				total = 0;
 
-			// Mark selected rows for task addition. First reset checked to empty string.
+			// Mark selected rows for task addition. First reset checked by removing "include" in the classname.
 			for (var k = 0; k < eRows.length; k++) {
-				eRows[k].className = "";
+				eRows[k].className = eRows[k].className.replace(/include/g, "");
 				if (eRows[k].querySelector("input[checked=checked]")) {
-					eRows[k].className = "include";
+					eRows[k].className += " include";
 				}
 			}
 
@@ -369,7 +375,7 @@
 			var tableViewForm = document.querySelector("#tableViewForm"),
 				textViewForm = document.querySelector("#tableViewForm");
 
-			tableForm.addEventListener("click", initTableFormCheckboxes, false);
+			tableViewForm.addEventListener("click", initTableFormCheckboxes, false);
 		}
 
 		function initTableFormCheckboxes(event) {
