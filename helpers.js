@@ -81,9 +81,17 @@ getCurrentSprint = function(request, callback) {
  * ordered by rank (rank is how the tickets are hand-ordered in Greenhopper): 
  * sprint = "Sprint 15" and (type = "story" or type = "bug") order by rank asc
  * How to use within the JIRA web app: Go to JIRA > Issues > Search for Issues > Paste it into search box > Hit enter
- * Here is the actual path: /rest/api/2/search?jql=sprint%20%3D%20%22Sprint%2015%22%20and
- *		%20(type%20%3D%20%22story%22%20or%20type%20%3D%20%22bug%22)%20order%20by%20rank%20asc
  *
+ * Reference: https://confluence.atlassian.com/display/JIRA/Advanced+Searching#AdvancedSearching-Type
+ *
+ * Here is an example path: 
+ * https://www.atlassian.net/rest/api/2/search?jql=sprint=%22Sprint%2015%22%20and%20
+ *		issueType%20in%20(Story,%20Bug,%20Improvement,%20Task,%20%22New%20Feature%22,%20Question)%20order%20by%20rank%20asc
+ *
+ * Here is an example path in a more readable format: 
+ * https://www.atlassian.net/rest/api/2/search?jql=sprint="Sprint 15" and 
+ *		issueType in (Story, Bug, Improvement, Task, "New Feature", Question) order by rank asc
+ * 
  * For reference, this call returns information about one ticket.
  * path: "/rest/api/2/issue/JIRA-929"
  */
@@ -91,9 +99,9 @@ getIssues = function(authentication, wipSprintObj, callback) {
 
 	var currentSprint = wipSprintObj.id;
 
-	var sprintQuery = "/rest/api/2/search?jql=sprint%20%3D%20%22" + 
+	var sprintQuery = "/rest/api/2/search?jql=sprint=%22" + 
 		currentSprint.replace(/ /g, "%20") + // HACK to convert space to a HTML entity.
-		"%22%20and%20(type%20%3D%20%22story%22%20or%20type%20%3D%20%22bug%22)%20order%20by%20rank%20asc";
+		"%22%20and%20issueType%20in%20(Story,%20Bug,%20Improvement,%20Task,%20%22New%20Feature%22,%20Question)%20order%20by%20rank%20asc";
 
 	var options = {
 		host: authentication.jiraHost,
@@ -128,6 +136,9 @@ getIssues = function(authentication, wipSprintObj, callback) {
 			callback(null, wipSprintObj);
 
 			console.log("There are " + wipSprintObj.total + " issues in " + wipSprintObj.id);
+
+			// DEBUG the list of tickets in the sprint.
+			printToConsole("BEGIN: Issues in sprint", "END: Issues in sprint", wipSprintObj);
 		});
 
 	}); // req = https.request
@@ -252,7 +263,7 @@ collectSubtasks = function(authentication, wipSprintObj, callback) {
 		var completeSprintObj = wipSprintObj;
 
 		// DEBUG the complete gigantic JSON representation of the sprint.
-		printToConsole("BEGIN Complete JSON Representation of Sprint", "END Complete JSON Representation of Sprint", completeSprintObj);
+		//printToConsole("BEGIN: Complete JSON Representation of Sprint", "END: Complete JSON Representation of Sprint", completeSprintObj);
 
 		callback(null, completeSprintObj);
 	});
@@ -351,7 +362,7 @@ formatForTable = function(completeSprintObj, callback) {
 	tableFriendlySprintObj.sprint.issues = formattedIssues;
 
 	// DEBUG this trimmed down JSON representation of the sprint.
-	printToConsole("BEGIN tableFriendlySprintObj", "END tableFriendlySprintObj", tableFriendlySprintObj);
+	//printToConsole("BEGIN: tableFriendlySprintObj", "END: tableFriendlySprintObj", tableFriendlySprintObj);
 
 	callback(null, tableFriendlySprintObj);
 
