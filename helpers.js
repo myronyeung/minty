@@ -82,7 +82,9 @@ getCurrentSprint = function(request, callback) {
  * sprint = "Sprint 15" and (type = "story" or type = "bug") order by rank asc
  * How to use within the JIRA web app: Go to JIRA > Issues > Search for Issues > Paste it into search box > Hit enter
  *
- * Reference: https://confluence.atlassian.com/display/JIRA/Advanced+Searching#AdvancedSearching-Type
+ * References:
+ * https://confluence.atlassian.com/display/JIRA/Advanced+Searching#AdvancedSearching-Type
+ * http://perishablepress.com/url-character-codes/
  *
  * Here is an example path: 
  * https://www.atlassian.net/rest/api/2/search?jql=sprint=%22Sprint%2015%22%20and%20
