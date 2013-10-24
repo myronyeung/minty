@@ -68,7 +68,8 @@
 		table .Resolved, table .Closed {
 			text-decoration: line-through;
 		}
-		table .In.Progress {
+		/* Apply to row, because this is only for stories (not task status) */
+		table tr.In.Progress {
 			background-color: #FFFF99;
 		}
 		.textView form {
