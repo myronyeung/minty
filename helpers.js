@@ -48,7 +48,7 @@ parseURL = function(URL, parseQueryString) {
 getCurrentSprint = function(request, callback) {
 
 	var query = parseURL(request.url, true),
-		currentSprint = "Sprint " + query["sprint"],
+		currentSprint = query["sprint"],
 		wipSprintObj = {};
 
 	wipSprintObj.id = currentSprint;
@@ -87,12 +87,10 @@ getCurrentSprint = function(request, callback) {
  * http://perishablepress.com/url-character-codes/
  *
  * Here is an example path: 
- * https://www.atlassian.net/rest/api/2/search?jql=sprint=%22Sprint%2015%22%20and%20
- *		issueType%20in%20(Story,%20Bug,%20Improvement,%20Task,%20%22New%20Feature%22,%20Question)%20order%20by%20rank%20asc
+ * https://www.atlassian.net/rest/api/2/search?jql=sprint=%22Sprint%2015%22%20and%20issueType%20in%20(Story,%20Bug,%20Improvement,%20Task,%20%22New%20Feature%22,%20Question)%20order%20by%20rank%20asc
  *
  * Here is an example path in a more readable format: 
- * https://www.atlassian.net/rest/api/2/search?jql=sprint="Sprint 15" and 
- *		issueType in (Story, Bug, Improvement, Task, "New Feature", Question) order by rank asc
+ * https://www.atlassian.net/rest/api/2/search?jql=sprint="Sprint 15" and issueType in (Story, Bug, Improvement, Task, "New Feature", Question) order by rank asc
  * 
  * For reference, this call returns information about one ticket.
  * path: "/rest/api/2/issue/JIRA-929"
