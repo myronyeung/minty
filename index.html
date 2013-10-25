@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine -->
+{{! Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine }}
 <html>
 
 <head>
@@ -80,6 +80,8 @@
 		.textView p {
 			margin-top: 0;
 			margin-bottom: 0;
+			font-family: Calibri, Helvetica, sans-serif; /* Calibri is my font of choice in Outlook */
+			font-size: 14px;
 		}
 
 		/* Temporary hack to hide extraneous info */
@@ -267,7 +269,9 @@
 						<td>{{#fixVersions}}{{.}} {{/fixVersions}}</td>
 						<td>{{status}}</td>
 						{{#subtasks}}
-						<td class="task {{name}} {{subtaskStatus}}">{{remainingEstimateHours}}</td>
+						<td class="task {{name}} {{subtaskStatus}}">
+							{{#subtaskHref}}<a href="{{subtaskHref}}" target="_blank">{{remainingEstimateHours}}</a>{{/subtaskHref}}
+						</td>
 						{{/subtasks}}
 						<td><input type="checkbox" name="" checked="checked"/></td>
 					</tr>
@@ -292,7 +296,7 @@
 					<li class="subtask">
 						<span class="fn">{{name}}</span>: 
 						<span class="estimate">
-							{{remainingEstimateHours}}h <!-- NaNh looks funny :-) -->
+							{{remainingEstimateHours}}h {{! NaNh looks funny :-) }}
 						</span>
 					</li>
 					{{/subtasksForStickies}}
