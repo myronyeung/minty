@@ -24,7 +24,7 @@ How: http://stackoverflow.com/questions/11375719/read-json-data-into-global-vari
 Running locally
 ---------------
 
-http://127.0.0.1:8000/index.html?sprint=16 (TODO: make sprint param more generic)
+http://127.0.0.1:8000/index.html?sprint=Sprint 16
 
 
 Miscellaneous
