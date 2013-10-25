@@ -352,11 +352,14 @@
 
 		function processTable() {
 			// I do not like the trailing comma in doers. mustache.js is a little too logic-less.
+			// TODO: Bit of a performance hit recalculating this info every time a checkbox is clicked.
 			var doers = [{{#sprint.contributors}}"{{.}}", {{/sprint.contributors}}],
 				eTable = document.querySelector("table"),
 				eRows = eTable.querySelectorAll("tbody tr"),
 				eTasks = null,
+				eTask = null,
 				eTotal = null,
+				estimate = 0,
 				total = 0;
 
 			// Mark selected rows for task addition. First reset checked by removing "include" in the classname.
@@ -376,9 +379,12 @@
 				total = 0;
 
 				for (var j = 0; j < eTasks.length; j++) {
-					var estimate = parseInt(eTasks[j].innerHTML);
-					if (estimate && !isNaN(estimate)) {
-						total += estimate;
+					eTask = eTasks[j].querySelector("a");
+					if(eTask) {
+						estimate = parseInt(eTask.innerHTML);
+						if (estimate && !isNaN(estimate)) {
+							total += estimate;
+						}
 					}
 				}
 
