@@ -1,6 +1,6 @@
 {
-	"name": "minty",
-	"description": "hello world test app",
+	"name": "Minty",
+	"description": "Resource Planning extension for GreenHopper.",
 	"version": "0.0.1",
 	"private": true,
 	"dependencies": {
