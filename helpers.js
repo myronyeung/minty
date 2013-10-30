@@ -138,7 +138,7 @@ getIssues = function(authentication, wipSprintObj, callback) {
 			console.log("There are " + wipSprintObj.total + " issues in " + wipSprintObj.id);
 
 			// DEBUG the list of tickets in the sprint.
-			printToConsole("BEGIN: Issues in sprint", "END: Issues in sprint", wipSprintObj);
+			//printToConsole("BEGIN: Issues in sprint", "END: Issues in sprint", wipSprintObj);
 		});
 
 	}); // req = https.request
@@ -275,6 +275,7 @@ collectSubtasks = function(authentication, wipSprintObj, callback) {
  * Custom function to include and format only the exact bits of information
  * I need to render my page.
  *
+ * TODO: Abstract out core functionality into separate functions for reuse
  */
 formatForTable = function(completeSprintObj, callback) {
 
@@ -371,6 +372,78 @@ formatForTable = function(completeSprintObj, callback) {
 
 } // formatForTable
 
+
+
+
+
+/**
+ * Custom function to include and format only the exact bits of information
+ * I need to render information for release.
+ *
+ * TODO: Abstract out core functionality into separate functions for reuse.
+ */
+formatForRelease = function(completeSprintObj, callback) {
+
+	var releaseFriendlySprintObj = {},
+		formattedIssues = [];
+		formattedIssue = null;
+		issue = null,
+		fields = null,
+		formattedSubtask = null,
+		subtask = null,
+		subtaskFields = null;
+
+	// Adding another level named "sprint" makes the mustache data calls in 
+	// the template look nicer.
+	releaseFriendlySprintObj.sprint = {};
+
+	// Add sprint metadata.
+	releaseFriendlySprintObj.sprint.id = completeSprintObj.id;
+	releaseFriendlySprintObj.sprint.total = completeSprintObj.total;
+	releaseFriendlySprintObj.sprint.contributors = completeSprintObj.contributors;
+
+	// Examine issues.
+	for (var i = 0; i < completeSprintObj.issues.length; i++) {
+		issue = completeSprintObj.issues[i];
+		fields = issue.fields;
+
+		formattedIssue = formattedIssues[i] = {};
+		formattedIssue.key = issue.key;
+		formattedIssue.summary = fields.summary;
+		formattedIssue.type = fields.issuetype.name;
+		formattedIssue.storyPoints = (formattedIssue.type === "Story" ? (fields.customfield_10002 ? parseInt(fields.customfield_10002) : "TBD") : "");
+		formattedIssue.status = fields.status.name;
+		formattedIssue.href = "https://" + completeSprintObj.host + "/browse/" + issue.key;
+		
+		formattedIssue.fixVersions = [];
+		for (var x = 0; x < fields.fixVersions.length; x++) {
+			formattedIssue.fixVersions[x] = fields.fixVersions[x].name;
+		}
+
+		//formattedIssue.subtasks = fields.subtasks;
+		formattedIssue.subtasks = [];
+		for (var y = 0; y < fields.subtasks.length; y++) {
+			subtask = fields.subtasks[y];
+			subtaskFields = subtask.fields;
+			formattedSubtask = {};
+			formattedSubtask.subtaskHref = "https://" + completeSprintObj.host + "/browse/" + subtask.key;
+			formattedSubtask.summary = subtaskFields.summary;
+			formattedSubtask.status = subtaskFields.status.name;
+
+			formattedIssue.subtasks[y] = formattedSubtask;
+		}
+	}
+
+	releaseFriendlySprintObj.sprint.issues = formattedIssues;
+
+	// DEBUG this trimmed down JSON representation of the sprint.
+	printToConsole("BEGIN: releaseFriendlySprintObj", "END: releaseFriendlySprintObj", releaseFriendlySprintObj);
+
+	callback(null, releaseFriendlySprintObj);
+
+} // formatForRelease
+
+
 /**
  * Marry data with template and send it to the client.
  */
@@ -442,13 +515,54 @@ display = function(response, request, authentication, template) {
 		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
 		function(err, tableFriendlySprintObj) {
 
-			console.log("Rendering HTML");
+			console.log("Rendering HTML with display function");
 			//console.log(util.inspect(tableFriendlySprintObj, { showHidden: false, depth: null })); // infinite depth
 
 			sendToTemplate(response, template, tableFriendlySprintObj);
 
 	});
-}
+} // display
+
+
+/**
+ * 
+ */
+display2 = function(response, request, authentication, template) {
+	// Much easier to build out the async.waterfall skeleton first, 
+	// and ensuring callbacks are in the right places.
+	// Reference: https://github.com/caolan/async#waterfall
+	async.waterfall([
+
+		function(callback) {
+			getCurrentSprint(request, callback);
+		},
+		
+		function(wipSprintObj, callback) {
+			getIssues(authentication, wipSprintObj, callback);
+		},
+
+		function(wipSprintObj, callback) {
+			collectSubtasks(authentication, wipSprintObj, callback);
+		},
+
+		// CUSTOMIZE DATA OUTPUT HERE:
+		// Filter/Format the data. This is where you control what 
+		// you want to send to the UI layer.
+		function(completeSprintObj, callback) {
+			formatForRelease(completeSprintObj, callback);
+		}
+
+	],	// Render HTML...Finally!
+		// Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine
+		function(err, tableFriendlySprintObj) {
+
+			console.log("Rendering HTML with display2");
+			//console.log(util.inspect(tableFriendlySprintObj, { showHidden: false, depth: null })); // infinite depth
+
+			sendToTemplate(response, template, tableFriendlySprintObj);
+
+	});
+} // display
 
 
 exports.authenticate = authenticate;
@@ -461,3 +575,4 @@ exports.formatForTable = formatForTable;
 exports.sendToTemplate = sendToTemplate;
 exports.printToConsole = printToConsole;
 exports.display = display;
+exports.display2 = display2; // TODO: Rename

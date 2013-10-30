@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+{{! Great tutorial on mustache.js + node.js: http://devcrapshoot.com/javascript/nodejs-expressjs-and-mustachejs-template-engine }}
+<html>
+
+<head>
+
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+	<title>Minty: Resource Planning Extension For GreenHopper</title>
+
+	<style>
+		html {
+			font-family: Courier, serif;
+		}
+	</style>
+
+</head>
+<body>
+	<header class="screen">
+		<h1>Minty: Resource Planning Extension For GreenHopper</h1>
+
+		<h2>Release Helper</h2>
+
+		<p>FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API. I will deal with this later.</p>
+	</header>
+
+	<pre>
+{{#sprint.issues}}
+<a href="{{href}}">{{href}}</a>
+{{summary}}
+{{#subtasks}}
+&#09;<a href="{{subtaskHref}}">{{subtaskHref}}</a>
+&#09;{{summary}}: {{status}}
+{{/subtasks}}<br />
+{{/sprint.issues}}
+	</pre>
+
+</body>
+
+</html>

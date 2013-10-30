@@ -32,6 +32,7 @@ function(err, result) {
 	var handle = {};
 	handle["/"] = requestHandlers.displayAll;
 	handle["/index.html"] = requestHandlers.displayAll;
+	handle["/release.html"] = requestHandlers.displayRelease;
 	handle["/error"] = requestHandlers.error;
 
 	server.start(router.route, handle, authentication);

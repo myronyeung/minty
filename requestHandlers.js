@@ -1,5 +1,6 @@
-var async = require("async");
-
+/*
+ *
+ */
 function displayAll(response, request, authentication) {
 
 	console.log("Request handler 'displayAll' was called.");
@@ -9,7 +10,23 @@ function displayAll(response, request, authentication) {
 } // displayAll
 
 
+/*
+ *
+ */
+function displayRelease(response, request, authentication) {
+
+	console.log("Request handler 'displayRelease' was called.");
+
+	display2(response, request, authentication, "release.html");
+
+} // displayAll
+
+
+/*
+ *
+ */
 function error(response) {
+
 	console.log("No request handler found, aka page not found.");
 
 	response.writeHead(404, {
@@ -25,4 +42,5 @@ function error(response) {
 
 //exports.start = start;
 exports.displayAll = displayAll;
+exports.displayRelease = displayRelease;
 exports.error = error;

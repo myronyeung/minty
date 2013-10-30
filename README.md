@@ -24,8 +24,8 @@ How: http://stackoverflow.com/questions/11375719/read-json-data-into-global-vari
 Running locally
 ---------------
 
-http://127.0.0.1:8000/index.html?sprint=Sprint 16
-
+Table, stickies, and text views: http://127.0.0.1:8000/index.html?sprint=Sprint 16
+Text view for creating release emails: http://127.0.0.1:8000/release.html?sprint=Sprint 16
 
 Miscellaneous
 -------------
