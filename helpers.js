@@ -23,8 +23,6 @@ authenticate  = function(callback) {
 				authentication.jiraHost = loginInfo.jiraHost;
 				authentication.myAuth = loginInfo.auth;
 
-			console.log("jiraHost: " + authentication.jiraHost);
-
 			callback(null, authentication);
 		}
 	});
