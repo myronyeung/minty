@@ -14,22 +14,20 @@ var async = require("async"),
  */
 authenticate  = function(callback) {
 
-	try {
-		fs.readFile("conf/settings.json", "UTF8", function(err, data) {
-			if (err) {
-				return console.log(err);
-			} else {
-				var loginInfo = JSON.parse(data),
-					authentication = {};
-					authentication.jiraHost = loginInfo.jiraHost;
-					authentication.myAuth = loginInfo.auth;
+	fs.readFile("conf/settings.json", "UTF8", function(err, data) {
+		if (err) {
+			return console.log("Error reading JIRA authentication file: " + err);
+		} else {
+			var loginInfo = JSON.parse(data),
+				authentication = {};
+				authentication.jiraHost = loginInfo.jiraHost;
+				authentication.myAuth = loginInfo.auth;
 
-				callback(null, authentication);
-			}
-		});
-	} catch (error) {
-		console.log("Error reading the JIRA authenication file.");
-	}
+			console.log("jiraHost: " + authentication.jiraHost);
+
+			callback(null, authentication);
+		}
+	});
 
 } // authenticate
 
