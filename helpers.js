@@ -28,8 +28,8 @@ authenticate  = function(callback) {
 	});
 */
 var authentication = {};
-				authentication.jiraHost = "myeung";
-				authentication.myAuth = "jirasucks";
+				authentication.jiraHost = "perfectsense.atlassian.net";
+				authentication.myAuth = "myeung:jirasucks";
 
 			callback(null, authentication);
 } // authenticate
