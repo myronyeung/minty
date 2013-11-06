@@ -20,7 +20,11 @@
 	<header class="screen">
 		<h1>Minty: Resource Planning Extension For GreenHopper</h1>
 
-		<h2>Release Helper</h2>
+		<h2>
+			Release Helper for this fix version: 
+			{{#sprint.fixVersion}}{{sprint.fixVersion}}{{/sprint.fixVersion}}
+			{{^sprint.fixVersion}}All (check that you passed in a valid fix version into query string){{/sprint.fixVersion}}
+		</h2>
 
 		<p>FYI: Currently Minty only displays up to 50 tickets, due to a limitation with the JIRA Rest API. I will deal with this later.</p>
 	</header>
