@@ -324,11 +324,14 @@ formatForTable = function(completeSprintObj, callback) {
 			for (var k = 0; k < fields.subtasks.length; k++) {
 				subtaskFields = fields.subtasks[k].subtask.fields;
 				if (subtaskFields.assignee.name === subtask.name) {
+
 					// Know this: Multiple subtasks per person complicates how to display hours (what if some subtasks are "TBD"?) and subtask link
 					// can only go to the last subtask, refer to subtask link creation below.
 					// TODO: Clean up this nested if structure.
 					if (subtaskFields.timetracking.originalEstimateSeconds) {
+
 						// Subtask hours were added.
+
 						if (isNaN(subtask.remainingEstimateHours)) {
 							// Either this is the first subtask belonging to this person or the previous subtasks belonging to this person 
 							// were all "TBD" (remember a person can have multiple subtasks)
@@ -338,7 +341,9 @@ formatForTable = function(completeSprintObj, callback) {
 							subtask.remainingEstimateHours += subtaskFields.timetracking.remainingEstimateSeconds / 3600;
 						}
 					} else {
+						
 						// Subtask hours were not added (subtaskFields.timetrack = empty object)
+
 						if (isNaN(subtask.remainingEstimateHours)) {
 							subtask.remainingEstimateHours = "TBD";
 						}
