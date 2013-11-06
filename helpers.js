@@ -13,7 +13,7 @@ var async = require("async"),
  * How: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
  */
 authenticate  = function(callback) {
-
+/*
 	fs.readFile("conf/settings.json", "UTF8", function(err, data) {
 		if (err) {
 			return console.log("Error reading JIRA authentication file: " + err);
@@ -26,7 +26,12 @@ authenticate  = function(callback) {
 			callback(null, authentication);
 		}
 	});
+*/
+var authentication = {};
+				authentication.jiraHost = "myeung";
+				authentication.myAuth = "jirasucks";
 
+			callback(null, authentication);
 } // authenticate
 
 
@@ -341,7 +346,7 @@ formatForTable = function(completeSprintObj, callback) {
 							subtask.remainingEstimateHours += subtaskFields.timetracking.remainingEstimateSeconds / 3600;
 						}
 					} else {
-						
+
 						// Subtask hours were not added (subtaskFields.timetrack = empty object)
 
 						if (isNaN(subtask.remainingEstimateHours)) {
