@@ -13,7 +13,7 @@ var async = require("async"),
  * How: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
  */
 authenticate  = function(callback) {
-/*
+	
 	fs.readFile("conf/settings.json", "UTF8", function(err, data) {
 		if (err) {
 			return console.log("Error reading JIRA authentication file: " + err);
@@ -26,12 +26,7 @@ authenticate  = function(callback) {
 			callback(null, authentication);
 		}
 	});
-*/
-var authentication = {};
-				authentication.jiraHost = "perfectsense.atlassian.net";
-				authentication.myAuth = "myeung:jirasucks";
 
-			callback(null, authentication);
 } // authenticate
 
 
