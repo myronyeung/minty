@@ -13,7 +13,7 @@ var async = require("async"),
  * How: http://stackoverflow.com/questions/11375719/read-json-data-into-global-variable-in-node-js
  */
 authenticate  = function(callback) {
-	
+
 	fs.readFile("conf/settings.json", "UTF8", function(err, data) {
 		if (err) {
 			return console.log("Error reading JIRA authentication file: " + err);
@@ -420,7 +420,6 @@ formatForRelease = function(completeSprintObj, callback) {
 	releaseFriendlySprintObj.sprint.id = completeSprintObj.id;
 	releaseFriendlySprintObj.sprint.total = completeSprintObj.total;
 	releaseFriendlySprintObj.sprint.contributors = completeSprintObj.contributors;
-	releaseFriendlySprintObj.sprint.fixVersion = fixVersion;
 
 	// Examine issues.
 	for (var i = 0; i < completeSprintObj.issues.length; i++) {
