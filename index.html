@@ -281,31 +281,6 @@
 		</form>
 	</section>
 
-	<section class="stickiesView">
-		<h2 class="screen">Stickies View</h2>
-		{{#sprint.issues}}
-		<ul class="ticket {{type}}">
-			<li class="type">{{type}}</li>
-			<li class="id">{{key}}</li>
-			<li class="description">{{summary}}</li>
-			{{#storyPoints}}<li class="points">{{storyPoints}}</li>{{/storyPoints}}
-			<li class="release">{{#fixVersions}}{{.}} {{/fixVersions}} &nbsp;</li>
-			<li>
-				<ul class="subtasks">
-					{{#subtasksForStickies}}
-					<li class="subtask">
-						<span class="fn">{{name}}</span>: 
-						<span class="estimate">
-							{{remainingEstimateHours}}h {{! NaNh looks funny :-) }}
-						</span>
-					</li>
-					{{/subtasksForStickies}}
-				</ul>
-			</li>
-		</ul>
-		{{/sprint.issues}}
-	</section>
-
 	<section class="textView hidden clearBoth screen">
 		<h2>Text View</h2>
 
@@ -329,6 +304,31 @@
 					{{remainingEstimateHours}}h,&#09; 
 				{{/subtasksForStickies}}</span>
 			</p>
+		{{/sprint.issues}}
+	</section>
+
+	<section class="stickiesView">
+		<h2 class="screen">Stickies View</h2>
+		{{#sprint.issues}}
+		<ul class="ticket {{type}}">
+			<li class="type">{{type}}</li>
+			<li class="id">{{key}}</li>
+			<li class="description">{{summary}}</li>
+			{{#storyPoints}}<li class="points">{{storyPoints}}</li>{{/storyPoints}}
+			<li class="release">{{#fixVersions}}{{.}} {{/fixVersions}} &nbsp;</li>
+			<li>
+				<ul class="subtasks">
+					{{#subtasksForStickies}}
+					<li class="subtask">
+						<span class="fn">{{name}}</span>: 
+						<span class="estimate">
+							{{remainingEstimateHours}}h {{! NaNh looks funny :-) }}
+						</span>
+					</li>
+					{{/subtasksForStickies}}
+				</ul>
+			</li>
+		</ul>
 		{{/sprint.issues}}
 	</section>
 
