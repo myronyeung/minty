@@ -316,51 +316,54 @@ formatForTable = function(completeSprintObj, callback) {
 
 		// Subtasks for tables.
 		formattedIssue.subtasks = [];
-		for (var j = 0; j < completeSprintObj.contributors.length; j++) {
-			subtask = formattedIssue.subtasks[j] = {};
-			subtask.name = completeSprintObj.contributors[j];
-			subtask.displayName = "COMING SOON!";
 
-			for (var k = 0; k < fields.subtasks.length; k++) {
-				subtaskFields = fields.subtasks[k].subtask.fields;
-				if (subtaskFields.assignee.name === subtask.name) {
+		if (completeSprintObj.contributors && completeSprintObj.contributors.length > 0) {
+			for (var j = 0; j < completeSprintObj.contributors.length; j++) {
+				subtask = formattedIssue.subtasks[j] = {};
+				subtask.name = completeSprintObj.contributors[j];
+				subtask.displayName = "COMING SOON!";
 
-					// Know this: Multiple subtasks per person complicates how to display hours (what if some subtasks are "TBD"?) and subtask link
-					// can only go to the last subtask, refer to subtask link creation below.
-					// TODO: Clean up this nested if structure.
-					if (subtaskFields.timetracking.originalEstimateSeconds) {
+				for (var k = 0; k < fields.subtasks.length; k++) {
+					subtaskFields = fields.subtasks[k].subtask.fields;
+					if (subtaskFields.assignee.name === subtask.name) {
 
-						// Subtask hours were added.
+						// Know this: Multiple subtasks per person complicates how to display hours (what if some subtasks are "TBD"?) and subtask link
+						// can only go to the last subtask, refer to subtask link creation below.
+						// TODO: Clean up this nested if structure.
+						if (subtaskFields.timetracking.originalEstimateSeconds) {
 
-						if (isNaN(subtask.remainingEstimateHours)) {
-							// Either this is the first subtask belonging to this person or the previous subtasks belonging to this person 
-							// were all "TBD" (remember a person can have multiple subtasks)
-							subtask.remainingEstimateHours = subtaskFields.timetracking.remainingEstimateSeconds / 3600;
+							// Subtask hours were added.
+
+							if (isNaN(subtask.remainingEstimateHours)) {
+								// Either this is the first subtask belonging to this person or the previous subtasks belonging to this person 
+								// were all "TBD" (remember a person can have multiple subtasks)
+								subtask.remainingEstimateHours = subtaskFields.timetracking.remainingEstimateSeconds / 3600;
+							} else {
+								// If contributor has multiple tasks, add them up.
+								subtask.remainingEstimateHours += subtaskFields.timetracking.remainingEstimateSeconds / 3600;
+							}
 						} else {
-							// If contributor has multiple tasks, add them up.
-							subtask.remainingEstimateHours += subtaskFields.timetracking.remainingEstimateSeconds / 3600;
-						}
-					} else {
 
-						// Subtask hours were not added (subtaskFields.timetrack = empty object)
+							// Subtask hours were not added (subtaskFields.timetrack = empty object)
 
-						if (isNaN(subtask.remainingEstimateHours)) {
-							subtask.remainingEstimateHours = "TBD";
+							if (isNaN(subtask.remainingEstimateHours)) {
+								subtask.remainingEstimateHours = "TBD";
+							}
 						}
+
+						// Output subtask status and link for anyone who is assigned a subtask. Use case: Resolved or Closed statuses are styled differently.
+						// Problem is that I have conflicting requirements: I want the aggregate total of hours for each person (remember, a person can have 
+						// multiple subtasks), but that means that there can only be one subtask hyperlink per person per story.
+						// Mustache.js bug? If I have a parent with a child object, and they both have identically named keys, e.g. "status".
+						// If the child.status does not exist, it prints parent.status. My hack was to rename subtask.status to subtask.subtaskStatus.
+						subtask.subtaskStatus = subtaskFields.status.name; 
+
+						// Handy feature to be able to go straight to subtask in JIRA.
+						subtask.subtaskHref = "https://" + completeSprintObj.host + "/browse/" + fields.subtasks[k].subtask.key;
 					}
-
-					// Output subtask status and link for anyone who is assigned a subtask. Use case: Resolved or Closed statuses are styled differently.
-					// Problem is that I have conflicting requirements: I want the aggregate total of hours for each person (remember, a person can have 
-					// multiple subtasks), but that means that there can only be one subtask hyperlink per person per story.
-					// Mustache.js bug? If I have a parent with a child object, and they both have identically named keys, e.g. "status".
-					// If the child.status does not exist, it prints parent.status. My hack was to rename subtask.status to subtask.subtaskStatus.
-					subtask.subtaskStatus = subtaskFields.status.name; 
-
-					// Handy feature to be able to go straight to subtask in JIRA.
-					subtask.subtaskHref = "https://" + completeSprintObj.host + "/browse/" + fields.subtasks[k].subtask.key;
 				}
 			}
-		}
+		} // if tickets have assigned contributors.
 
 		// Subtasks for stickies.
 		formattedIssue.subtasksForStickies = [];
