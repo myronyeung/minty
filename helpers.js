@@ -41,6 +41,7 @@ parseURL = function(URL, parseQueryString) {
 } // parseURL
 
 
+// TODO: Rename function to be more general.
 /**
  * Get current sprint from URL.
  *
@@ -49,9 +50,11 @@ getCurrentSprint = function(request, callback) {
 
 	var query = parseURL(request.url, true),
 		currentSprint = query["sprint"],
+		fixVersion = query["fixVersion"], // TODO: Allow multiple fixVersions.
 		wipSprintObj = {};
 
 	wipSprintObj.id = currentSprint;
+	wipSprintObj.fixVersion = fixVersion;
 
 	callback(null, wipSprintObj);
 
@@ -90,18 +93,28 @@ getCurrentSprint = function(request, callback) {
  * https://www.atlassian.net/rest/api/2/search?jql=sprint=%22Sprint%2015%22%20and%20issueType%20in%20(Story,%20Bug,%20Improvement,%20Task,%20%22New%20Feature%22,%20Question)%20order%20by%20rank%20asc
  *
  * Here is an example path in a more readable format: 
- * https://www.atlassian.net/rest/api/2/search?jql=sprint="Sprint 15" and issueType in (Story, Bug, Improvement, Task, "New Feature", Question) order by rank asc
+ * https://www.atlassian.net/rest/api/2/search?jql=sprint="Sprint 15" and fixVersion="Dec 11" and issueType in (Story, Bug, Improvement, Task, "New Feature", Question) order by rank asc
  * 
  * For reference, this call returns information about one ticket.
  * path: "/rest/api/2/issue/JIRA-929"
  */
 getIssues = function(authentication, wipSprintObj, callback) {
 
-	var currentSprint = wipSprintObj.id;
+	var currentSprint = wipSprintObj.id, // TODO: Add error catching.
+		fixVersion = wipSprintObj.fixVersion, // TODO: Add error catching.
+		fixVersionQuery = "";
+
+	if(fixVersion) {
+		fixVersionQuery = "fixVersion=%22" +
+		fixVersion.replace(/ /g, "%20") + // HACK to convert space to a HTML entity.
+		"%22%20and%20"; 
+	}
 
 	var sprintQuery = "/rest/api/2/search?jql=sprint=%22" + 
 		currentSprint.replace(/ /g, "%20") + // HACK to convert space to a HTML entity.
-		"%22%20and%20issueType%20in%20(Story,%20Bug,%20Improvement,%20Task,%20%22New%20Feature%22,%20Question)%20order%20by%20rank%20asc";
+		"%22%20and%20" + 
+		fixVersionQuery + 
+		"issueType%20in%20(Story,%20Bug,%20Improvement,%20Task,%20%22New%20Feature%22,%20Question)%20order%20by%20rank%20asc";
 
 	var options = {
 		host: authentication.jiraHost,
